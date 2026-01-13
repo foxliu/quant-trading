@@ -1,8 +1,8 @@
 package order
 
 import (
-	"quant-trading/internal/domain/common"
 	"quant-trading/internal/domain/instrument"
+	"quant-trading/internal/domain/trade"
 	"time"
 )
 
@@ -17,7 +17,7 @@ type Order struct {
 	ID         string
 	Instrument instrument.Instrument
 
-	Side     common.Side
+	Side     trade.Side
 	Type     Type
 	Price    float64
 	Quantity float64

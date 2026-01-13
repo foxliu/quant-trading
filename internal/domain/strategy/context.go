@@ -1,6 +1,7 @@
 package strategy
 
 import (
+	"quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/market"
 	"time"
 )
@@ -39,4 +40,9 @@ type Context interface {
 
 	Params() map[string]interface{}
 	SetParams(params map[string]interface{})
+
+	// ========= Account =========
+
+	Account() account.Context
+	SetAccountContext(ctx account.Context)
 }

@@ -1,8 +1,9 @@
 package strategy
 
-type Side string
+type PositionIntent string
 
 const (
-	SideLong  Side = "LONG"
-	SideShort Side = "SHORT"
+	Long  PositionIntent = "LONG"
+	Short PositionIntent = "SHORT"
+	Flat  PositionIntent = "FLAT" // 可选，但非常推荐
 )
