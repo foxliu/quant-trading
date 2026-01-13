@@ -1,0 +1,94 @@
+# ----------------------
+# Go 语言标准忽略（来自 GitHub gitignore/Go.gitignore）
+# ----------------------
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Coverage and profiling files
+*.coverprofile
+*.prof
+coverage.*
+profile.cov
+
+# ----------------------
+# GoLand / JetBrains IDE 专用文件（非常重要，不要提交到 Git）
+# ----------------------
+.idea/
+*.iml
+*.iws
+
+# GoLand 模块缓存、运行配置等
+.idea/modules.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dataSources/
+.idea/dataSourcesLocal.xml
+.idea/shelf/
+.idea/dictionaries/
+.idea/vcs.xml
+.idea/codeStyles/
+.idea/inspectionProfiles/
+
+# ----------------------
+# macOS 系统文件
+# ----------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ----------------------
+# 其他常见临时/构建文件（根据项目需要可选添加/删除）
+# ----------------------
+# 本地环境配置文件（敏感信息不要提交）
+.env
+.env.local
+*.local.*
+
+# 构建输出目录（如果你有自定义 bin/ 或 build/）
+bin/
+build/
+dist/
+out/
+
+# 测试日志或临时文件
+*.log
+tmp/
+temp/
+
+# 如果使用 Docker 或其他工具生成的
+Dockerfile*
+docker-compose*
+*.dockerignore
+
+# 如果项目有 node_modules（偶尔 Go 项目混用前端）
+node_modules/
+logs/
