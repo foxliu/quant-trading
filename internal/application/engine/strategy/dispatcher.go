@@ -2,7 +2,7 @@ package strategyengine
 
 import (
 	"context"
-	"quant-trading/internal/application/engine/risk"
+	"quant-trading/internal/application/risk"
 	"quant-trading/internal/domain/market"
 	"sync"
 )

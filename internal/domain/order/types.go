@@ -1,18 +1,14 @@
 package order
 
+/*
+Type
+====
+
+Order Type 描述订单的执行方式。
+*/
 type Type string
 
 const (
 	Market Type = "MARKET"
 	Limit  Type = "LIMIT"
-)
-
-type Status string
-
-const (
-	New       Status = "NEW"
-	Submitted Status = "SUBMITTED"
-	Filled    Status = "FILLED"
-	Canceled  Status = "CANCELED"
-	Rejected  Status = "REJECTED"
 )

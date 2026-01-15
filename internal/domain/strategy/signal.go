@@ -1,5 +1,7 @@
 package strategy
 
+// FROZEN: V1
+
 import (
 	"time"
 )
@@ -24,13 +26,12 @@ type Signal struct {
 
 	// === 意图描述 ===
 
-	Action Action         // Buy / Sell / Close / Hold
-	Intent PositionIntent // Long / Short （对衍生品友好）
+	Intent    PositionIntent // IntentLong / IntentShort （对衍生品友好）
+	TargetQty float64        // 期望数量/目标仓位（非最终成交数量）
 
-	// === 数量与价格（均为“建议”） ===
+	// === 价格（均为“建议”） ===
 
-	Quantity float64 // 期望数量（非最终成交数量）
-	Price    float64 // 期望价格（0 表示市价）
+	Price float64 // 期望价格（0 表示市价）
 
 	// === 扩展字段 ===
 

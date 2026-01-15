@@ -1,28 +1,43 @@
 package order
 
 import (
-	"quant-trading/internal/domain/instrument"
+	"quant-trading/internal/domain/strategy"
 	"quant-trading/internal/domain/trade"
 	"time"
 )
 
 /*
-Order 订单模型
+Order
+=====
 
-Quantity 含义：
-股票：股数
-期货 / 期权：合约数
+Order 表示一笔【可执行的标准化交易意图】。
+
+约定：
+- Order 是 Risk Engine 的最终产物
+- Execution Engine 必须能够直接消费 Order
+- Order 不表达策略意图（IntentLong / IntentShort）
+- 只表达交易动作（Buy / Sell）
+- Quantity 是相对变化量（Delta）
+- Intent 复用 strategy.PositionIntent
+- Side 使用 trade.Side
 */
 type Order struct {
-	ID         string
-	Instrument instrument.Instrument
+	// === 标识 ===
+	OrderID    string
+	StrategyID string
+	Symbol     string
 
-	Side     trade.Side
-	Type     Type
-	Price    float64
-	Quantity float64
+	// === 方向与行为 ===
+	Side   trade.Side              // Buy / Sell
+	Intent strategy.PositionIntent // IntentLong / IntentShort / IntentFlat
 
-	Status     Status
-	CreateTime time.Time
-	UpdateTime time.Time
+	// === 数量与价格 ===
+	Quantity float64 // 相对数量 (Delta)
+	Price    float64 // 0 = 市价
+
+	// === 状态 ===
+	Status Status
+
+	// === 时间 ===
+	CreatedAt time.Time
 }
