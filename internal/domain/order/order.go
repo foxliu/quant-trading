@@ -32,7 +32,7 @@ type Order struct {
 	Intent strategy.PositionIntent // IntentLong / IntentShort / IntentFlat
 
 	// === 数量与价格 ===
-	Quantity float64 // 相对数量 (Delta)
+	Quantity int64   // 相对数量 (Delta)
 	Price    float64 // 0 = 市价
 
 	// === 状态 ===

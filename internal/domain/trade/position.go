@@ -4,41 +4,26 @@ import "time"
 
 /*
 Position
+
 ========
 
-Position 表示某一 Symbol 在某一账户下的净持仓。
+Position 是“事实状态”，只由 Execution Event 推导
 
-约定：
-- Qty > 0  : 多头
-- Qty < 0  : 空头
-- Qty == 0 : 空仓
+	Qty 永远是 正数
+
+	Side 表示方向
+
+	0 Qty = 无仓位（Position 不存在）
 */
 type Position struct {
 	AccountID string
 	Symbol    string
+	Sid       Side // Long / Short
 
-	Qty float64 // 当前净仓位(+Long/-Short)
+	Qty int64 // 当前持仓数量（绝对值）
 
-	AvgPrice float64 // 持仓均价 (当前阶段不参与计算)
+	AvgPrice float64 // 加权平均成本价
 
+	OpenTime time.Time
 	UpdateAt time.Time
-}
-
-func (p *Position) IsFlat() bool {
-	return p.Qty == 0
-}
-
-func (p *Position) IsLong() bool {
-	return p.Qty > 0
-}
-
-func (p *Position) IsShort() bool {
-	return p.Qty < 0
-}
-
-func (p *Position) AbsQty() float64 {
-	if p.Qty < 0 {
-		return -p.Qty
-	}
-	return p.Qty
 }

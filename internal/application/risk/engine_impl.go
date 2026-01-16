@@ -2,47 +2,51 @@ package risk
 
 import (
 	"context"
+	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/strategy"
 	"sync"
 )
 
 type engine struct {
-	ctx    context.Context
-	cancel context.CancelFunc
+	ctx    *Context
+	input  <-chan order.Order
+	output chan<- order.Order
 
-	signalCh chan strategy.Signal
-	wg       sync.WaitGroup
-
-	ctxProvider ContextProvider
+	stop chan struct{}
 }
 
-func NewEngine(ctxProvider ContextProvider, buffer int) Engine {
+func NewEngine(ctx *Context, input <-chan order.Order, output chan<- order.Order) Engine {
 	return &engine{
-		signalCh:    make(chan strategy.Signal, buffer),
-		ctxProvider: ctxProvider,
+		ctx:    ctx,
+		input:  input,
+		output: output,
+		stop:   make(chan struct{}),
 	}
 }
 
-func (e *engine) Start(parent context.Context) error {
-	e.ctx, e.cancel = context.WithCancel(parent)
-
-	e.wg.Add(1)
+func (e *engine) Start(ctx context.Context) error {
 	go func() {
-		defer e.wg.Done()
-		e.run()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-e.stop:
+				return
+			case o := <-e.input:
+				e.handle(o)
+			}
+		}
 	}()
-	return nil
 }
 
 func (e *engine) Stop() error {
-	e.cancel()
-	e.wg.Wait()
+	close(e.stop)
 	return nil
 }
 
-func (e *engine) Consume(signal strategy.Signal) {
+func (e *engine) Consume(o order.Order) {
 	select {
-	case e.signalCh <- signal:
+	case e.input <- o:
 	default:
 		// 丢弃， 保证不阻塞上游
 	}

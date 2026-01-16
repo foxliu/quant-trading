@@ -12,24 +12,31 @@ Context
 Position Context 维护账户维度的仓位事实。
 */
 type Context struct {
-	mu       sync.RWMutex
-	position map[string]*trade.Position // key = symbol
+	mu sync.Mutex
+
+	symbol string
+	pos    *trade.Position
 }
 
-func NewContext() *Context {
+func NewContext(symbol string) *Context {
 	return &Context{
-		position: make(map[string]*trade.Position),
+		symbol: symbol,
 	}
 }
 
-func (c *Context) Get(symbol string) *trade.Position {
-	c.mu.RLock()
-	defer c.mu.Unlock()
-	return c.position[symbol]
+func (c *Context) Symbol() string {
+	return c.symbol
 }
 
-func (c *Context) Set(pos *trade.Position) {
+func (c *Context) Position() *trade.Position {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.position[pos.Symbol] = pos
+
+	if c.pos == nil {
+		return nil
+	}
+
+	// 返回拷贝，防止外部篡改
+	p := *c.pos
+	return &p
 }

@@ -151,3 +151,23 @@ type Strategy interface {
 之前看起来“重复”，是因为我在**不同抽象层反复解释它们**，现在这一次统一收敛。
 
 ---
+
+## 主链路
+```text
+Market Event
+   ↓
+Strategy Engine
+   ↓
+Signal
+   ↓
+Planner
+   ↓
+Order            ← 业务订单（意图清晰）
+   ↓
+Risk Engine
+   ↓
+Execution Engine 
+   ↓
+Broker / Exchange / Simulator
+```
+___
