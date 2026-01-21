@@ -2,25 +2,27 @@ package risk
 
 import (
 	"context"
-	"quant-trading/internal/domain/order"
-	"quant-trading/internal/domain/strategy"
 	"sync"
+	"time"
 )
 
 type engine struct {
-	ctx    *Context
-	input  <-chan order.Order
-	output chan<- order.Order
+	ctx *Context
 
-	stop chan struct{}
+	rules []Rule
+
+	resultCh chan *Result
+	stopCh   chan struct{}
+
+	mu sync.Mutex
 }
 
-func NewEngine(ctx *Context, input <-chan order.Order, output chan<- order.Order) Engine {
+func NewEngine(ctx *Context, rules ...Rule) Engine {
 	return &engine{
-		ctx:    ctx,
-		input:  input,
-		output: output,
-		stop:   make(chan struct{}),
+		ctx:      ctx,
+		rules:    rules,
+		resultCh: make(chan *Result, 64),
+		stopCh:   make(chan struct{}),
 	}
 }
 
@@ -30,24 +32,33 @@ func (e *engine) Start(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				return
-			case <-e.stop:
+			case <-e.stopCh:
 				return
-			case o := <-e.input:
-				e.handle(o)
+			default:
+				e.Evaluate()
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}()
-}
-
-func (e *engine) Stop() error {
-	close(e.stop)
 	return nil
 }
 
-func (e *engine) Consume(o order.Order) {
-	select {
-	case e.input <- o:
-	default:
-		// 丢弃， 保证不阻塞上游
+func (e *engine) Stop() error {
+	close(e.stopCh)
+	return nil
+}
+
+func (e *engine) Evaluate() {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	for _, rule := range e.rules {
+		if res := rule.Evaluate(e.ctx); res != nil {
+			e.resultCh <- res
+		}
 	}
+}
+
+func (e *engine) Results() <-chan *Result {
+	return e.resultCh
 }

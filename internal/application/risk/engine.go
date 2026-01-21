@@ -2,7 +2,6 @@ package risk
 
 import (
 	"context"
-	"quant-trading/internal/domain/strategy"
 )
 
 /*
@@ -19,5 +18,6 @@ type Engine interface {
 	Start(ctx context.Context) error
 	Stop() error
 
-	Consume(signal strategy.Signal)
+	Evaluate()
+	Results() <-chan *Result
 }

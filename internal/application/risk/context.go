@@ -1,5 +1,12 @@
 package risk
 
+import (
+	"quant-trading/internal/application/account"
+	"quant-trading/internal/application/position"
+	"quant-trading/internal/domain/pnl"
+	"sync"
+)
+
 /*
 Context
 =======
@@ -7,13 +14,31 @@ Context
 Risk Context 表示一组风控规则的集合。
 */
 type Context struct {
-	MaxPositionQty float64 // 单标的最大绝对仓位
-	MaxOrderQty    float64 // 单笔最大下单量
+	Mu sync.Mutex
+
+	Account  account.Snapshot
+	Position position.Snapshot
+	PnL      pnl.Snapshot
 }
 
 func NewContext() *Context {
-	return &Context{
-		MaxPositionQty: 0, // 0 = 不限制
-		MaxOrderQty:    0, // 0 = 不限制
-	}
+	return &Context{}
+}
+
+func (c *Context) UpdateAccount(s account.Snapshot) {
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
+	c.Account = s
+}
+
+func (c *Context) UpdatePosition(s position.Snapshot) {
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
+	c.Position = s
+}
+
+func (c *Context) UpdatePnL(s pnl.Snapshot) {
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
+	c.PnL = s
 }

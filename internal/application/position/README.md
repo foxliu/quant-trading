@@ -17,3 +17,20 @@
 - Account Context
 - Risk Exposure
 - PnL 计算
+
+---
+## Position Context 在整个架构中的位置
+```text
+Strategy
+  └── Signal (TargetQty)
+        ↓
+Planner
+  └── Order (未修正，Quantity = Target 占位)
+        ↓
+Position Engine   ←【我们现在做的】
+  ├── Position Context（仓位事实）
+  ├── Target → Delta 计算
+  └── 修正 Order.Quantity / Side
+        ↓
+Risk / Execution（后续）
+```

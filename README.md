@@ -60,18 +60,55 @@
 │       └── position.go           # 持仓
 │
 ├── application                   # 应用层（怎么把 domain 跑起来）
-│   ├── engine
-│   │   ├── strategy
-│   │   │   ├── engine.go         # Strategy Engine 门面
-│   │   │   ├── dispatcher.go     # 策略调度（并发 / 隔离）
-│   │   │   ├── runtime.go        # 策略运行时
-│   │   │   └── registry.go       # 策略注册
-│   │   │
-│   │   ├── risk                  # Risk Engine（后续）
-│   │   ├── execution             # Execution Engine（后续）
-│   │   └── backtest              # Backtest Engine（后续）
+│   ├── strategy/           # 策略
+│   │   ├── engine.go         # Strategy Engine 门面
+│   │   ├── dispatcher.go     # 策略调度（并发 / 隔离）
+│   │   ├── runtime.go        # 策略运行时
+│   │   └── registry.go       # 策略注册
+│   ├── account/            # 账户
+│   │   ├── context.go          // Account Context（核心）
+│   │   ├── handler.go          // Execution / Position 事件处理
+│   │   ├── snapshot.go         // Account Snapshot（只读）
+│   │   ├── balance.go          // Cash / Equity 计算
+│   │   ├── errors.go
+│   │   └── README.md
+│   ├── risk/                # 风控
+│   │   ├── context.go
+│   │   ├── engine.go        // interface
+│   │   ├── engine_impl.go   // 实现
+│   │   └── validator.go
+│   ├── execution/             # 交易执行
+│   │   ├── engine.go          // Execution Engine 接口
+│   │   ├── listener.go        // Execution Event Listener
+│   │   ├── event.go           // Execution Event 定义
+│   │   ├── command.go              # Risk → Execution 命令
+│   │   ├── controller.go           # Risk Coordinator 入口
+│   │   ├── controller_impl.go      # 强平主流程
+│   │   ├── order_manager.go        # 未完成订单管理（最小）
+│   │   ├── position_reader.go      # Position 查询抽象
+│   │   ├── executor.go             # 下单执行抽象
+│   │   ├── types.go
+│   │   ├── paper/
+│   │   │   └── engine.go      // Paper / Mock Execution 实现
+│   │   └── README.md          // 设计约定（建议保留）
+│   ├── position/             # 仓位管理
+│   │   ├── context.go  // Position Context 定义
+│   │   ├── manager.go   // Position Manager（多 symbol）
+│   │   ├── handler.go   // Execution Event Handler
+│   │   ├── snapshot.go   // 只读快照
+│   │   ├── errors.go   // Position Manager（多 symbol）
+│   │   └── README.md
+│   ├── market/             # 市场
+│   │   ├── context.go          // Market Price Context
+│   │   ├── snapshot.go         // Price Snapshot
+│   │   ├── handler.go          // 外部行情入口
+│   │   └── README.md
+│   ├── pnl/             # 收益
+│   │   ├── calculator.go       // PnL 计算器（纯函数）
+│   │   └── model.go
+│   ├── backtest/              # Backtest Engine（后续）
 │   │
-│   └── service
+│   └── service/
 │       └── trading_app.go        # 系统装配与编排
 │
 ├── infrastructure                # 外部世界
@@ -169,5 +206,20 @@ Risk Engine
 Execution Engine 
    ↓
 Broker / Exchange / Simulator
+```
+
+```text
+Strategy
+   ↓ Signal
+Planner
+   ↓ Order
+Risk Engine
+   ↓ Approved Order
+Execution Engine
+   ↓ Execution Event
+Position Context
+   ↓ Position Snapshot
+Account Context
+
 ```
 ___

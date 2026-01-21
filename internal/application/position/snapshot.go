@@ -18,7 +18,6 @@ func NewSnapshot(pos *trade.Position) *Snapshot {
 
 	return &Snapshot{
 		Symbol:   pos.Symbol,
-		Side:     pos.Sid,
 		Qty:      pos.Qty,
 		AvgPrice: pos.AvgPrice,
 	}

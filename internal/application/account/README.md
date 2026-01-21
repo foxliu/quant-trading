@@ -20,3 +20,19 @@ Position Snapshot → Account Context
 ## 对外出口
 
 Account Snapshot 是唯一读接口
+
+---
+## 事实链路
+```text
+Strategy
+   ↓ Signal
+Planner
+   ↓ Order
+Risk Engine
+   ↓ Approved Order
+Execution Engine
+   ↓ Execution Event
+Position Context
+   ↓ Position Snapshot
+Account Context
+```

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"quant-trading/internal/application/execution"
 	"quant-trading/internal/domain/trade"
+	"quant-trading/pkg/utils"
 	"time"
 )
 
@@ -34,14 +35,17 @@ func (c *Context) applyFill(evt *execution.Event) error {
 		now = time.Now()
 	}
 
-	side := trade.SideFromOrderID(evt.OrderID) // 外部约定
+	// Buy = +qty, Sell = -qty
+	delta := evt.FilledQty
+	if evt.Side == trade.Sell {
+		delta = -delta
+	}
 
 	// === 无仓位 → 新开仓 ===
 	if c.pos == nil {
 		c.pos = &trade.Position{
 			Symbol:   c.symbol,
-			Sid:      side,
-			Qty:      evt.FilledQty,
+			Qty:      delta,
 			AvgPrice: evt.Price,
 			OpenTime: now,
 			UpdateAt: now,
@@ -49,39 +53,38 @@ func (c *Context) applyFill(evt *execution.Event) error {
 		return nil
 	}
 
-	// === 同方向加仓 ===
-	if c.pos.Sid == side {
-		totalCost := float64(c.pos.Qty)*c.pos.AvgPrice + float64(evt.FilledQty)*evt.Price
+	prevQty := c.pos.Qty
+	newQty := prevQty + delta
 
-		c.pos.Qty += evt.FilledQty
-		c.pos.AvgPrice = totalCost / float64(c.pos.Qty)
+	// == 完全平仓 ===
+	if newQty == 0 {
+		c.pos = nil
+		return nil
+	}
+
+	// === 同方向加仓 ===
+	if (prevQty > 0 && delta > 0) || (prevQty < 0 && delta < 0) {
+		totalCost := float64(utils.Abs(prevQty))*c.pos.AvgPrice + float64(utils.Abs(delta))*evt.Price
+
+		c.pos.Qty = newQty
+		c.pos.AvgPrice = totalCost / float64(utils.Abs(newQty))
 		c.pos.UpdateAt = now
 		return nil
 	}
 
 	// === 反方向成交 → 减仓 / 平仓 / 反手 ===
-	if evt.FilledQty < c.pos.Qty {
-		c.pos.Qty -= evt.FilledQty
+	if utils.Abs(delta) < utils.Abs(prevQty) {
+		// 减仓，不变成本
+		c.pos.Qty = newQty
 		c.pos.UpdateAt = now
 		return nil
 	}
 
-	if evt.FilledQty == c.pos.Qty {
-		// 完全平仓
-		c.pos = nil
-		return nil
-	}
-
 	// === 反手 ===
-	newQty := evt.FilledQty - c.pos.Qty
+	c.pos.Qty = newQty
+	c.pos.AvgPrice = evt.Price
+	c.pos.OpenTime = now
+	c.pos.UpdateAt = now
 
-	c.pos = &trade.Position{
-		Symbol:   c.symbol,
-		Sid:      side,
-		Qty:      newQty,
-		AvgPrice: evt.Price,
-		OpenTime: now,
-		UpdateAt: now,
-	}
 	return nil
 }

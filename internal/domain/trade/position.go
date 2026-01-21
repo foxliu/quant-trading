@@ -6,19 +6,16 @@ import "time"
 Position
 
 ========
+Qty 含义：
 
-Position 是“事实状态”，只由 Execution Event 推导
+- Qty > 0 : 净多头
 
-	Qty 永远是 正数
+- Qty < 0 : 净空头
 
-	Side 表示方向
-
-	0 Qty = 无仓位（Position 不存在）
+- Qty = 0 : 无仓位（Position 不存在）
 */
 type Position struct {
-	AccountID string
-	Symbol    string
-	Sid       Side // Long / Short
+	Symbol string
 
 	Qty int64 // 当前持仓数量（绝对值）
 
