@@ -2,7 +2,7 @@ package position
 
 import (
 	"errors"
-	"quant-trading/internal/application/execution"
+	"quant-trading/internal/domain/execution"
 	"quant-trading/internal/domain/trade"
 	"quant-trading/pkg/utils"
 	"time"

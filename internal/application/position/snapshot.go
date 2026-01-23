@@ -1,14 +1,16 @@
 package position
 
-import "quant-trading/internal/domain/trade"
+import (
+	"quant-trading/internal/domain/trade"
+	"time"
+)
 
 // 只读出口
 
 type Snapshot struct {
-	Symbol   string
-	Side     trade.Side
-	Qty      int64
-	AvgPrice float64
+	Symbol string
+	Pos    *trade.Position
+	At     time.Time
 }
 
 func NewSnapshot(pos *trade.Position) *Snapshot {
@@ -17,8 +19,16 @@ func NewSnapshot(pos *trade.Position) *Snapshot {
 	}
 
 	return &Snapshot{
-		Symbol:   pos.Symbol,
-		Qty:      pos.Qty,
-		AvgPrice: pos.AvgPrice,
+		Symbol: pos.Symbol,
+		At:     pos.UpdateAt,
+		Pos:    pos,
 	}
+}
+
+func (s *Snapshot) Name() string {
+	return "position"
+}
+
+func (s *Snapshot) Timestamp() time.Time {
+	return s.At
 }

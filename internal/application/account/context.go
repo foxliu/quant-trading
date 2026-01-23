@@ -1,28 +1,38 @@
 package account
 
 import (
-	"quant-trading/internal/application/position"
 	"quant-trading/internal/domain/account"
+	"quant-trading/internal/domain/execution"
 	"sync"
+	"time"
 )
 
 type Context struct {
 	mu sync.Mutex
 
-	account account.Account
-
+	cfg     account.Config
 	balance account.Balance
 
-	positions map[string]*position.Snapshot
+	updateAt time.Time
 }
 
-func NewContext(acc account.Account, initialCash float64) *Context {
+func NewContext(cfg account.Config) *Context {
 	return &Context{
-		account: acc,
+		cfg: cfg,
 		balance: account.Balance{
-			Cash:   initialCash,
-			Equity: initialCash,
+			Cash:   cfg.InitialCash,
+			Equity: cfg.InitialCash,
 		},
-		positions: make(map[string]*position.Snapshot),
+		updateAt: time.Now(),
+	}
+}
+
+func (c *Context) OnExecutionEvent(evt *execution.Event) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	switch evt.Type {
+	case execution.OrderFilled, execution.OrderPartiallyFilled:
+		return c.applyFill(evt)
 	}
 }
