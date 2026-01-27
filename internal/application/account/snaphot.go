@@ -1,8 +1,8 @@
 package account
 
 import (
-	"quant-trading/internal/application/position"
 	"quant-trading/internal/domain/account"
+	"time"
 )
 
 /*
@@ -10,24 +10,14 @@ import (
 */
 
 type Snapshot struct {
-	AccountID string
-
-	Balance   account.Balance
-	Positions map[string]*position.Snapshot
+	Balance account.Balance
+	At      time.Time
 }
 
-func (c *Context) Snapshot() *Snapshot {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (s *Snapshot) Name() string {
+	return "account"
+}
 
-	posCopy := make(map[string]*position.Snapshot)
-	for k, v := range c.positions {
-		posCopy[k] = v
-	}
-
-	return &Snapshot{
-		AccountID: c.account.AccountID,
-		Balance:   c.balance,
-		Positions: posCopy,
-	}
+func (s *Snapshot) Timestamp() time.Time {
+	return s.At
 }

@@ -2,7 +2,8 @@ package strategyengine
 
 import (
 	"errors"
-	"quant-trading/internal/domain/account"
+	dAccount "quant-trading/internal/Domain/account"
+	"quant-trading/internal/application/account"
 	"quant-trading/internal/domain/market"
 	"quant-trading/internal/domain/strategy"
 )
@@ -19,14 +20,16 @@ Runtime 表示【一个策略实例的运行时】。
 - 并发隔离在 Dispatcher 层完成
 */
 type Runtime struct {
+	Account dAccount.Descriptor
+
 	strategy    strategy.Strategy
 	strategyCtx strategy.Context
-	accountCtx  account.Context
+	accountCtx  *account.Context
 
 	eventCh chan market.Event
 }
 
-func NewRuntime(s strategy.Strategy, accountCtx account.Context, buf int) *Runtime {
+func NewRuntime(s strategy.Strategy, accountCtx *account.Context, buf int) *Runtime {
 	ctx := strategy.NewContext()
 	ctx.SetAccountContext(accountCtx)
 	return &Runtime{

@@ -15,17 +15,23 @@ Account Context：
 
 ## 数据来源
 
-Execution Event  → Position Context  
-Position Snapshot → Account Context
+```text
+Execution Event
+  ├─ OrderFilled
+  ├─ OrderPartiallyFilled
+  ├─ FeeCharged
+  └─ Funding / Commission
+```
 
-## 对外出口
-
+## 对外输出
+```text
 - Account Snapshot 是唯一读接口
 - 只输出状态（Snapshot / Query）
   - Cash Balance
   - Equity
   - Realized PnL
   - Unrealized PnL（来自 Position + Market）
+```
 
 ---
 ## 事实链路

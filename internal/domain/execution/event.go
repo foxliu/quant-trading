@@ -20,6 +20,8 @@ const (
 	OrderFilled          EventType = "FILLED"
 	OrderCanceled        EventType = "CANCELED"
 	OrderRejected        EventType = "REJECTED"
+
+	FreeCharged EventType = "FREE_CHARGED"
 )
 
 /*
@@ -40,4 +42,6 @@ type Event struct {
 
 	Timestamp time.Time
 	Reason    string // 拒单 / 取消原因
+
+	Fee float64 // 费用
 }

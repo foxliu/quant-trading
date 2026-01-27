@@ -5,42 +5,21 @@ import (
 	"time"
 )
 
-type Price struct {
-	Symbol    string
-	Last      float64
-	Timestamp time.Time
-}
-
 type Context struct {
-	mu     sync.Mutex
-	prices map[string]Price
+	mu       sync.RWMutex
+	price    float64
+	updateAt time.Time
 }
 
-func NewContext() *Context {
-	return &Context{
-		prices: make(map[string]Price),
-	}
-}
-
-func (c *Context) Update(symbol string, price float64, ts time.Time) {
-	if ts.IsZero() {
-		ts = time.Now()
-	}
-
+func (c *Context) OnMarketPrice(price float64, at time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	c.prices[symbol] = Price{
-		Symbol:    symbol,
-		Last:      price,
-		Timestamp: ts,
-	}
+	c.price = price
+	c.updateAt = at
 }
 
-func (c *Context) Get(symbol string) (Price, bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	p, ok := c.prices[symbol]
-	return p, ok
+func (c *Context) Latest() (float64, time.Time) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.price, c.updateAt
 }
