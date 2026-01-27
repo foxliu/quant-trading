@@ -1,7 +1,7 @@
 package position
 
 import (
-	"quant-trading/internal/application/execution"
+	dExecution "quant-trading/internal/domain/execution"
 	"sync"
 )
 
@@ -30,7 +30,7 @@ func (m *Manager) Get(symbol string) *Context {
 	return ctx
 }
 
-func (m *Manager) OnExecutionEvent(evt *execution.Event, symbol string) error {
+func (m *Manager) OnExecutionEvent(evt *dExecution.Event, symbol string) error {
 	ctx := m.Get(symbol)
 	return ctx.OnExecutionEvent(evt)
 }

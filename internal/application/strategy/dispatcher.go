@@ -62,8 +62,10 @@ Start
 func (d *Dispatcher) Start(parent context.Context) error {
 	d.ctx, d.cancel = context.WithCancel(parent)
 
-	if err := d.risk.Start(d.ctx); err != nil {
-		return err
+	if d.risk != nil {
+		if err := d.risk.Start(d.ctx); err != nil {
+			return err
+		}
 	}
 
 	for _, r := range d.runtimes {
@@ -149,9 +151,11 @@ func (d *Dispatcher) run(rt *Runtime) {
 				return
 			}
 			// Signal 在下一阶段交给 Risk Engine
-			for _, sig := range signals {
-				d.risk.Consume(sig)
-			}
+			// TODO: 实现signal消费逻辑
+			_ = signals
+			// for _, sig := range signals {
+			//     d.risk.Consume(sig)
+			// }
 		}
 	}
 }

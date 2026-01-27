@@ -5,6 +5,11 @@ type Snapshot struct {
 	Last   float64
 }
 
+type Price struct {
+	Symbol string
+	Last   float64
+}
+
 func NewSnapShot(p Price) Snapshot {
 	return Snapshot{
 		Symbol: p.Symbol,

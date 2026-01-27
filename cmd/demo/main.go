@@ -1,28 +1,36 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"quant-trading/internal/application/strategy"
-	"quant-trading/internal/domain"
+	"quant-trading/internal/application/account"
+	dAccount "quant-trading/internal/domain/account"
+	"quant-trading/internal/domain/market"
+	"quant-trading/internal/domain/strategy"
 	"time"
 )
 
 func main() {
-	bar := domain.MarketBar{
-		Instrument: "AAPL",
-		Time:       time.Now(),
-		Close:      120,
+	// 创建账户上下文
+	accCfg := dAccount.Config{
+		AccountID:   "demo_account",
+		InitialCash: 100000.0,
 	}
+	accCtx := account.NewContext(accCfg)
 
-	sc := strategy.NewContext(bar.Time)
-	stg := strategy.NewDemoStrategy("demo")
+	// 创建策略上下文
+	stgCtx := strategy.NewContext()
+	stgCtx.SetAccountContext(accCtx)
 
-	engine := strategy.NewEngine(stg)
-
-	signals := engine.RunOnBar(context.Background(), sc, bar)
-
-	for _, s := range signals {
-		fmt.Printf("Signal: %+v\n", *s)
+	// 创建行情事件
+	event := market.Event{
+		Type: market.EventMarket,
+		Time: time.Now(),
+		Data: nil,
 	}
+	stgCtx.SetCurrentEvent(event)
+	stgCtx.SetNow(event.Time)
+
+	fmt.Printf("账户信息: ID=%s, 现金=%.2f, 权益=%.2f\n",
+		accCtx.AccountID(), accCtx.Cash(), accCtx.Equity())
+	fmt.Println("策略引擎演示完成")
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"quant-trading/internal/application/execution"
+	dExecution "quant-trading/internal/domain/execution"
 	"quant-trading/internal/domain/order"
 	"time"
 )
@@ -37,16 +38,20 @@ func (e *PaperExecution) Submit(ctx context.Context, ord *order.Order) error {
 	now := time.Now()
 
 	// 1. Order Accept
-	e.listener.OnExecutionEvent(ctx, &execution.Event{
+	e.listener.OnExecutionEvent(ctx, &dExecution.Event{
 		OrderID:   ord.OrderID,
-		Type:      execution.OrderAccepted,
+		Symbol:    ord.Symbol,
+		Type:      dExecution.OrderAccepted,
+		Side:      ord.Side,
 		Timestamp: now,
 	})
 
 	// 2. 直接全部成交（最简单模型）
-	e.listener.OnExecutionEvent(ctx, &execution.Event{
+	e.listener.OnExecutionEvent(ctx, &dExecution.Event{
 		OrderID:   ord.OrderID,
-		Type:      execution.OrderFilled,
+		Symbol:    ord.Symbol,
+		Type:      dExecution.OrderFilled,
+		Side:      ord.Side,
 		FilledQty: ord.Quantity,
 		Price:     ord.Price,
 		Timestamp: now.Add(1 * time.Millisecond),

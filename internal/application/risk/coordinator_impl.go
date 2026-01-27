@@ -95,6 +95,12 @@ func (c *coordinator) handleForceClose(res *Result) {
 	}()
 }
 
+func (c *coordinator) handleHalt(res *Result) {
+	// TODO: 实现暂停交易逻辑
+	// 当前阶段仅记录日志
+	_ = res
+}
+
 func extractSymbol(res *Result) string {
 	// 当前阶段：单 symbol 系统
 	return "DEFAULT"

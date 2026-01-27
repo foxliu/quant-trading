@@ -1,5 +1,6 @@
 package account
 
 type Config struct {
-	InitialCash float64
+	AccountID   string
+	InitialCash float64 // 初始化资金
 }

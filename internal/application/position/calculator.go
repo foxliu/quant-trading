@@ -19,7 +19,7 @@ CalcDelta
 func CalcDelta(pos *trade.Position, signal strategy.Signal) (delta float64, side trade.Side) {
 	current := 0.0
 	if pos != nil {
-		current = pos.Qty
+		current = float64(pos.Qty)
 	}
 
 	target := signal.TargetQty

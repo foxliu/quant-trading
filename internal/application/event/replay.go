@@ -18,13 +18,15 @@ func NewReplayer(bus Bus, store snapshot.Store) *ReplayEngine {
 }
 
 func (r *ReplayEngine) ReplayFromSnapshot(sn snapshot.Snapshot, events []*Envelope) {
-	if sn != nil {
-		restoreAll(sn)
-	}
+	// TODO: 实现快照恢复逻辑
+	// if sn != nil {
+	//     restoreAll(sn)
+	// }
 
 	for _, evt := range events {
-		if evt.Timestamp.After(snapshot.Timestamp()) {
-			r.bus.Publish(evt)
-		}
+		// TODO: 实现时间戳比较
+		// if evt.Timestamp.After(sn.Timestamp()) {
+		r.bus.Publish(evt)
+		// }
 	}
 }

@@ -1,7 +1,6 @@
 package strategy
 
 import (
-	"quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/market"
 	"sync"
 	"time"
@@ -25,7 +24,7 @@ type DefaultContext struct {
 	params map[string]interface{}
 	state  map[string]interface{}
 
-	accountCtx account.Context
+	accountCtx AccountReader
 
 	mu sync.RWMutex
 }
@@ -115,12 +114,12 @@ func (c *DefaultContext) SetParams(params map[string]any) {
 
 // ========= Account =========
 
-func (c *DefaultContext) SetAccountContext(ctx account.Context) {
+func (c *DefaultContext) SetAccountContext(ctx AccountReader) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.accountCtx = ctx
 }
 
-func (c *DefaultContext) Account() account.Context {
+func (c *DefaultContext) Account() AccountReader {
 	return c.accountCtx
 }

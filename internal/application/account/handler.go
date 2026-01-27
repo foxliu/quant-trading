@@ -1,8 +1,8 @@
 package account
 
 import (
-	"quant-trading/internal/application/execution"
 	"quant-trading/internal/application/position"
+	dExecution "quant-trading/internal/domain/execution"
 )
 
 /*
@@ -15,17 +15,18 @@ func (c *Context) OnPositionSnapshot(snapshot *position.Snapshot) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if snapshot != nil {
-		if snapshot.Qty == 0 {
-			delete(c.positions, snapshot.Symbol)
-		} else {
-			c.positions[snapshot.Symbol] = snapshot
-		}
-	}
-	c.recalculateEquity()
+	// TODO: 实现仓位快照管理
+	// if snapshot != nil {
+	//     if snapshot.Qty == 0 {
+	//         delete(c.positions, snapshot.Symbol)
+	//     } else {
+	//         c.positions[snapshot.Symbol] = snapshot
+	//     }
+	// }
+	// c.recalculateEquity()
 }
 
-func (c *Context) ONExecutionEvent(evt *execution.Event) {
+func (c *Context) ONExecutionEvent(evt *dExecution.Event) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

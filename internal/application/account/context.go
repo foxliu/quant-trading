@@ -17,7 +17,7 @@ type Context struct {
 	mu sync.Mutex
 
 	cfg     account.Config
-	balance account.Balance
+	balance account.Balance // 余额
 
 	updateAt time.Time
 }
@@ -32,6 +32,40 @@ func NewContext(cfg account.Config) *Context {
 		updateAt: time.Now(),
 	}
 }
+
+// ========= AccountReader接口实现 =========
+
+func (c *Context) AccountID() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.cfg.AccountID
+}
+
+func (c *Context) Cash() float64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.balance.Cash
+}
+
+func (c *Context) Equity() float64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.balance.Equity
+}
+
+func (c *Context) RealizedPnL() float64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.balance.RealizedPnL
+}
+
+func (c *Context) UnrealizedPnL() float64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.balance.UnrealizedPnL
+}
+
+// ========= 事件处理 =========
 
 func (c *Context) OnExecutionEvent(evt *execution.Event) error {
 	c.mu.Lock()

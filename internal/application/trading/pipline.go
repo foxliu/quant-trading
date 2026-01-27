@@ -24,9 +24,9 @@ type Pipeline struct {
 	orderCh3 chan order.Order // Risk -> Execution (保留）
 
 	// 组件
-	planner        *risk.Planner
-	positionEngine *position.Engine
-	riskEngine     risk.Engine
+	planner *risk.Planner
+	// positionEngine *position.Engine
+	riskEngine risk.Engine
 }
 
 func NewPipeline(
@@ -40,24 +40,33 @@ func NewPipeline(
 
 	planner := risk.NewPlanner(orderCh1)
 
-	posEngine := position.NewEngine(positionCtx, orderCh1, orderCh2)
-	riskEngine := risk.NewEngine(riskCtx, orderCh2, orderCh3)
+	// TODO: 实现position engine和risk engine
+	// var posEngine *position.Engine = nil
+	var riskEngine risk.Engine = nil
+	// posEngine := position.NewEngine(positionCtx, orderCh1, orderCh2)
+	// riskEngine := risk.NewEngine(riskCtx, orderCh2, orderCh3)
+	_ = positionCtx
+	_ = riskCtx
+	_ = orderCh2
+	_ = orderCh3
 
 	return &Pipeline{
-		signalCh:       signalCh,
-		orderCh1:       orderCh1,
-		orderCh2:       orderCh2,
-		orderCh3:       orderCh3,
-		planner:        planner,
-		positionEngine: posEngine,
-		riskEngine:     riskEngine,
+		signalCh: signalCh,
+		orderCh1: orderCh1,
+		orderCh2: orderCh2,
+		orderCh3: orderCh3,
+		planner:  planner,
+		// positionEngine: posEngine,
+		riskEngine: riskEngine,
 	}
 }
 
 func (p *Pipeline) Start(ctx context.Context) error {
 	// 启动 Position / Risk (它们自己监听 channel）
-	_ = p.positionEngine.Start(ctx)
-	_ = p.riskEngine.Start(ctx)
+	// _ = p.positionEngine.Start(ctx)
+	if p.riskEngine != nil {
+		_ = p.riskEngine.Start(ctx)
+	}
 
 	// 启动 Planner 消费 Signal
 	go func() {

@@ -26,7 +26,7 @@ func (p *Planner) openLong(signal strategy.Signal) []order.Order {
 		Symbol:     signal.Symbol,
 		Side:       trade.Buy,
 		Intent:     strategy.IntentLong,
-		Quantity:   signal.TargetQty, // 此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
+		Quantity:   int64(signal.TargetQty), // 此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
 		Price:      signal.Price,
 		Status:     order.Pending,
 		CreatedAt:  time.Now(),
@@ -43,7 +43,7 @@ func (p *Planner) openShort(signal strategy.Signal) []order.Order {
 		Side:   trade.Sell,
 		Intent: strategy.IntentShort,
 
-		Quantity: signal.TargetQty, //此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
+		Quantity: int64(signal.TargetQty), //此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
 		Price:    signal.Price,
 
 		Status:    order.Pending,
@@ -60,7 +60,7 @@ func (p *Planner) closePosition(signal strategy.Signal) []order.Order {
 		Symbol:     signal.Symbol,
 		Side:       trade.Sell, // 占位，后续由 Position 决定
 		Intent:     strategy.IntentFlat,
-		Quantity:   signal.TargetQty, // 此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
+		Quantity:   int64(signal.TargetQty), // 此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
 		Price:      signal.Price,
 		Status:     order.Pending,
 		CreatedAt:  time.Now(),

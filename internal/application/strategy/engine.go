@@ -36,6 +36,7 @@ func NewEngine(dispatcher *Dispatcher) *Engine {
 		ctx:        ctx,
 		cancel:     cancel,
 		dispatcher: dispatcher,
+		mu:         &sync.Mutex{},
 	}
 }
 

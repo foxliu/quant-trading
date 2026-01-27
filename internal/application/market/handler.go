@@ -14,5 +14,5 @@ func NewHandler(ctx *Context) *Handler {
 }
 
 func (h *Handler) OnTick(symbol string, price float64, ts time.Time) {
-	h.ctx.Update(symbol, price, ts)
+	h.ctx.OnMarketPrice(price, ts)
 }

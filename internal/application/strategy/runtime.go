@@ -2,8 +2,8 @@ package strategyengine
 
 import (
 	"errors"
-	dAccount "quant-trading/internal/Domain/account"
 	"quant-trading/internal/application/account"
+	dAccount "quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/market"
 	"quant-trading/internal/domain/strategy"
 )
