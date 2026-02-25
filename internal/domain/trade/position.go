@@ -24,3 +24,15 @@ type Position struct {
 	OpenTime time.Time
 	UpdateAt time.Time
 }
+
+func (p *Position) IsFlat() bool {
+	return p.Qty == 0
+}
+
+func (p *Position) IsLong() bool {
+	return p.Qty > 0
+}
+
+func (p *Position) IsShort() bool {
+	return p.Qty < 0
+}
