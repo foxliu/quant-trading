@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"quant-trading/internal/application/account"
+	"quant-trading/internal/application/event"
+	runtime2 "quant-trading/internal/application/runtime"
 	strategyengine "quant-trading/internal/application/strategy"
 	dAccount "quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/strategy"
@@ -80,10 +82,12 @@ func NewEngine(
 	stgCtx.SetAccountContext(accountCtx)
 
 	// 创建策略运行时
-	runtime := strategyengine.NewRuntime(stg, accountCtx, 1024)
+	runtime := runtime2.NewRuntime(stg, accountCtx, 1024)
+
+	bus := event.NewMemoryBus()
 
 	// 创建策略调度器
-	dispatcher := strategyengine.NewDispatcher([]*strategyengine.Runtime{runtime}, nil)
+	dispatcher := strategyengine.NewDispatcher([]*runtime2.Runtime{runtime}, nil, bus)
 
 	// 创建策略引擎
 	strategyEngine := strategyengine.NewEngine(dispatcher)

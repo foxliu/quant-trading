@@ -2,7 +2,9 @@ package strategyengine
 
 import (
 	"context"
+	"quant-trading/internal/application/event"
 	"quant-trading/internal/application/risk"
+	"quant-trading/internal/application/runtime"
 	"quant-trading/internal/domain/market"
 	"sync"
 )
@@ -24,8 +26,9 @@ Dispatcher 负责【事件广播 + Runtime 并发调度】。
 - 每个市场事件会被广播给所有 Runtime
 */
 type Dispatcher struct {
-	runtimes []*Runtime
+	runtimes []*runtime.Runtime
 	risk     risk.Engine
+	bus      event.Bus // 注入 Event Bus
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -42,10 +45,11 @@ Dispatcher 是一个“调度器”，而不是“运行时工厂”。
 - Runtime 必须在外部创建（Account-aware）
 - Dispatcher 只接收 Runtime 集合
 */
-func NewDispatcher(runtimes []*Runtime, riskEngine risk.Engine) *Dispatcher {
+func NewDispatcher(runtimes []*runtime.Runtime, riskEngine risk.Engine, bus event.Bus) *Dispatcher {
 	return &Dispatcher{
 		runtimes: runtimes,
 		risk:     riskEngine,
+		bus:      bus,
 	}
 }
 
@@ -61,6 +65,13 @@ Start
 */
 func (d *Dispatcher) Start(parent context.Context) error {
 	d.ctx, d.cancel = context.WithCancel(parent)
+
+	// 注册 EventBus 订阅
+	d.bus.Subscribe(event.EventMarketPrice, func(evt *event.Envelope) {
+		if marketEvt, ok := evt.Payload.(market.Event); ok {
+			d.Dispatch(marketEvt)
+		}
+	})
 
 	if d.risk != nil {
 		if err := d.risk.Start(d.ctx); err != nil {
@@ -138,7 +149,7 @@ run
 - 串行消费事件
 - Runtime 出错只影响自身
 */
-func (d *Dispatcher) run(rt *Runtime) {
+func (d *Dispatcher) run(rt *runtime.Runtime) {
 	for {
 		select {
 		case <-d.ctx.Done():

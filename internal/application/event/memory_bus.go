@@ -22,7 +22,7 @@ func NewMemoryBus() *MemoryBus {
 	}
 }
 
-func (b *MemoryBus) SubScribe(t Type, h Handler) {
+func (b *MemoryBus) Subscribe(t Type, h Handler) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.handlers[t] = append(b.handlers[t], h)
