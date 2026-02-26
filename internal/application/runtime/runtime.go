@@ -3,9 +3,10 @@ package runtime
 import (
 	"errors"
 	"quant-trading/internal/application/account"
-	dAccount "quant-trading/internal/domain/account"
+	"quant-trading/internal/application/event"
 	"quant-trading/internal/domain/market"
 	"quant-trading/internal/domain/strategy"
+	"time"
 )
 
 /*
@@ -20,23 +21,22 @@ Runtime 表示【一个策略实例的运行时】。
 - 并发隔离在 Dispatcher 层完成
 */
 type Runtime struct {
-	Account dAccount.Descriptor
-
 	strategy    strategy.Strategy
 	strategyCtx strategy.Context
 	accountCtx  *account.Context
-
-	eventCh chan market.Event
+	bus         event.Bus
+	eventCh     chan market.Event
 }
 
-func NewRuntime(s strategy.Strategy, accountCtx *account.Context, buf int) *Runtime {
-	ctx := strategy.NewContext()
-	ctx.SetAccountContext(accountCtx)
+func NewRuntime(s strategy.Strategy, accountCtx *account.Context, bus event.Bus, buffer int) *Runtime {
+	strategyCtx := strategy.NewContext()
+	strategyCtx.SetAccountContext(accountCtx)
 	return &Runtime{
 		strategy:    s,
-		strategyCtx: ctx,
+		strategyCtx: strategyCtx,
 		accountCtx:  accountCtx,
-		eventCh:     make(chan market.Event, buf),
+		bus:         bus,
+		eventCh:     make(chan market.Event, buffer),
 	}
 }
 
@@ -91,8 +91,25 @@ HandleEvent
 
 处理单个市场事件（串行调用）。
 */
-func (r *Runtime) HandleEvent(event market.Event) ([]strategy.Signal, error) {
-	return r.strategy.OnMarketEvent(r.strategyCtx, event)
+func (r *Runtime) HandleEvent(evt market.Event) ([]strategy.Signal, error) {
+	// 把市场事件注入 Strategy Context 中
+	r.strategyCtx.SetCurrentEvent(evt)
+
+	signals, err := r.strategy.OnMarketEvent(r.strategyCtx, evt)
+	if err != nil {
+		return nil, err
+	}
+
+	// 通过 EventBus 发布 Signal （供 Risk Engine 消费）
+	for _, sig := range signals {
+		r.bus.Publish(&event.Envelope{
+			Type:      event.EventSignal,
+			Source:    "strategy-" + r.strategy.Name(),
+			Timestamp: time.Now(),
+			Payload:   sig,
+		})
+	}
+	return signals, nil
 }
 
 /*

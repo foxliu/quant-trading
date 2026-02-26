@@ -15,8 +15,8 @@ func NewRecordingBus(bus Bus, recorder Recorder) *RecordingBus {
 }
 
 func (b *RecordingBus) Publish(evt *Envelope) {
-	b.recorder.Record(evt)
-	b.bus.Publish(evt)
+	b.recorder.Record(evt) // 先记录
+	b.bus.Publish(evt)     // 再广播
 }
 
 func (b *RecordingBus) Subscribe(t Type, h Handler) {

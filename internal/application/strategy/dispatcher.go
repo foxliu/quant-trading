@@ -46,10 +46,12 @@ Dispatcher 是一个“调度器”，而不是“运行时工厂”。
 - Dispatcher 只接收 Runtime 集合
 */
 func NewDispatcher(runtimes []*runtime.Runtime, riskEngine risk.Engine, bus event.Bus) *Dispatcher {
+	recordingBus := event.NewRecordingBus(bus, event.NewMemoryRecorder())
+
 	return &Dispatcher{
 		runtimes: runtimes,
 		risk:     riskEngine,
-		bus:      bus,
+		bus:      recordingBus,
 	}
 }
 
@@ -154,19 +156,15 @@ func (d *Dispatcher) run(rt *runtime.Runtime) {
 		select {
 		case <-d.ctx.Done():
 			return
-		case event := <-rt.EventChan():
-			signals, err := rt.HandleEvent(event)
+		case evt := <-rt.EventChan():
+			signals, err := rt.HandleEvent(evt)
 			if err != nil {
 				// 策略内部错误，打印错误信息，并停止策略
 				_ = rt.Stop()
 				return
 			}
-			// Signal 在下一阶段交给 Risk Engine
-			// TODO: 实现signal消费逻辑
+			// Signal 通过 EventBus 发出，无需手动消费
 			_ = signals
-			// for _, sig := range signals {
-			//     d.risk.Consume(sig)
-			// }
 		}
 	}
 }

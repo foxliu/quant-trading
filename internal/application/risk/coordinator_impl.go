@@ -2,6 +2,7 @@ package risk
 
 import (
 	"context"
+	"quant-trading/internal/application/event"
 	"quant-trading/internal/application/execution"
 	risk2 "quant-trading/internal/domain/risk"
 	"sync"
@@ -9,36 +10,47 @@ import (
 )
 
 type coordinator struct {
-	exec execution.Controller
-
+	exec     execution.Controller
 	resultCh <-chan *Result
+	bus      event.Bus
 
 	mu sync.Mutex
 
 	// 防止重复强平
 	active map[string]bool
+
+	stopCh chan struct{}
 }
 
-func NewCoordinator(exec execution.Controller, results <-chan *Result) Coordinator {
+func NewCoordinator(exec execution.Controller, results <-chan *Result, bus event.Bus) Coordinator {
 	return &coordinator{
 		exec:     exec,
 		resultCh: results,
+		bus:      bus,
 		active:   make(map[string]bool),
+		stopCh:   make(chan struct{}),
 	}
 }
 
 func (c *coordinator) Start(ctx context.Context) error {
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case res := <-c.resultCh:
-				c.OnRiskResult(res)
-			}
-		}
-	}()
+	go c.runResultChannel(ctx)
+	if c.bus != nil {
+		c.bus.Subscribe(event.EventRiskBreach, c.handleEventBusRiskBreach)
+	}
 	return nil
+}
+
+func (c *coordinator) runResultChannel(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-c.stopCh:
+			return
+		case res := <-c.resultCh:
+			c.OnRiskResult(res)
+		}
+	}
 }
 
 func (c *coordinator) Stop() error {
@@ -58,7 +70,7 @@ func (c *coordinator) OnRiskResult(res *Result) {
 		c.handleForceClose(res)
 
 	case risk2.ActionHaltTrading:
-		c.handleHalt(res)
+		c.handleHaltTrading(res)
 
 	default:
 		// ActionRejectOrder 交给 Execution 层前置校验
@@ -95,7 +107,19 @@ func (c *coordinator) handleForceClose(res *Result) {
 	}()
 }
 
-func (c *coordinator) handleHalt(res *Result) {
+func (c *coordinator) handleEventBusRiskBreach(evt *event.Envelope) {
+	if breach, ok := evt.Payload.(*risk2.Breach); ok {
+		res := &Result{
+			RuleName: breach.RuleName,
+			Action:   risk2.ActionForceClose,
+			Reason:   breach.Reason,
+			Time:     time.Now(),
+		}
+		c.OnRiskResult(res)
+	}
+}
+
+func (c *coordinator) handleHaltTrading(res *Result) {
 	// TODO: 实现暂停交易逻辑
 	// 当前阶段仅记录日志
 	_ = res
@@ -103,5 +127,7 @@ func (c *coordinator) handleHalt(res *Result) {
 
 func extractSymbol(res *Result) string {
 	// 当前阶段：单 symbol 系统
+	// 当前单 symbol 系统可直接返回默认，或从 res.Reason 解析
+	// 未来可改为 res.Meta["symbol"]
 	return "DEFAULT"
 }

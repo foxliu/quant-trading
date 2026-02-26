@@ -81,13 +81,14 @@ func NewEngine(
 	stgCtx := strategy.NewContext()
 	stgCtx.SetAccountContext(accountCtx)
 
-	// 创建策略运行时
-	runtime := runtime2.NewRuntime(stg, accountCtx, 1024)
-
 	bus := event.NewMemoryBus()
+	recorder := event.NewMemoryRecorder()
+	recordingBus := event.NewRecordingBus(bus, recorder)
+	// 创建策略运行时
+	runtime := runtime2.NewRuntime(stg, accountCtx, recordingBus, 1024)
 
 	// 创建策略调度器
-	dispatcher := strategyengine.NewDispatcher([]*runtime2.Runtime{runtime}, nil, bus)
+	dispatcher := strategyengine.NewDispatcher([]*runtime2.Runtime{runtime}, nil, recordingBus)
 
 	// 创建策略引擎
 	strategyEngine := strategyengine.NewEngine(dispatcher)
