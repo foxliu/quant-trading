@@ -2,10 +2,11 @@ package account
 
 import (
 	"quant-trading/internal/domain/account"
-	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/capital"
+	"quant-trading/internal/domain/order"
+	"quant-trading/internal/domain/portfolio"
 	"quant-trading/internal/domain/trade"
 	"sync"
-	"time"
 )
 
 /*
@@ -14,94 +15,156 @@ Account 不计算盈亏
 */
 
 type Context struct {
-	mu sync.Mutex
+	mu sync.RWMutex
 
-	cfg     account.Config
-	balance account.Balance // 余额
+	acc account.Account
 
-	updateAt time.Time
+	capital   capital.Engine
+	portfolio portfolio.Engine
+
+	dirty bool
 }
 
-func NewContext(cfg account.Config) *Context {
+func NewContext(acc account.Account, cap capital.Engine, port portfolio.Engine) *Context {
 	return &Context{
-		cfg: cfg,
-		balance: account.Balance{
-			Cash:   cfg.InitialCash,
-			Equity: cfg.InitialCash,
-		},
-		updateAt: time.Now(),
+		acc:       acc,
+		capital:   cap,
+		portfolio: port,
 	}
 }
 
-// ========= AccountReader接口实现 =========
+// AcceptOrder 订单接受
+func (c *Context) AcceptOrder(o *order.Order) error {
+	err := c.capital.Freeze(o.OrderID, o.Symbol, o.Price, float64(o.Quantity), o.Side)
+	if err != nil {
+		return err
+	}
+	c.makeDirty()
+	return nil
+}
+
+func (c *Context) ApplyFill(orderID string, symbol string, side trade.Side, qty int64, price float64) error {
+	amount := float64(qty) * price
+	if err := c.capital.Commit(orderID, amount); err != nil {
+		return err
+	}
+
+	c.portfolio.UpdateFill(symbol, side, qty, price)
+
+	c.makeDirty()
+	return nil
+}
+
+// ApplyCancel 订单接受
+func (c *Context) ApplyCancel(orderID string) error {
+	if err := c.capital.Release(orderID); err != nil {
+		return err
+	}
+	c.makeDirty()
+	return nil
+}
+
+// ApplyMarketPrice 行情更新
+func (c *Context) ApplyMarketPrice(symbol string, price float64) {
+	c.portfolio.UpdateMarkPrice(symbol, price)
+	c.makeDirty()
+}
 
 func (c *Context) AccountID() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.cfg.AccountID
+	return c.acc.AccountID
 }
 
-func (c *Context) Cash() float64 {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.balance.Cash
+func (c *Context) Available() float64 {
+	return c.capital.Available()
+}
+
+func (c *Context) Frozen() float64 {
+	return c.capital.Frozen()
+}
+
+func (c *Context) TotalCapital() float64 {
+	return c.capital.Total()
 }
 
 func (c *Context) Equity() float64 {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.balance.Equity
+	return c.capital.Total() + c.portfolio.UnrealizedPnL()
 }
 
 func (c *Context) RealizedPnL() float64 {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.balance.RealizedPnL
+	return c.portfolio.RealizedPnL()
 }
 
 func (c *Context) UnrealizedPnL() float64 {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.balance.UnrealizedPnL
+	return c.portfolio.UnrealizedPnL()
 }
 
-// ========= 事件处理 =========
+// ========= Snapshot支持 =========
 
-func (c *Context) OnExecutionEvent(evt *execution.Event) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	switch evt.Type {
-	case execution.OrderFilled, execution.OrderPartiallyFilled:
-		return c.applyFill(evt)
-
-	case execution.FreeCharged:
-		return c.applyFree(evt)
-	default:
-		return nil
+func (c *Context) Snapshot() account.Snapshot {
+	return account.Snapshot{
+		CapitalSnapshot:   c.capital.Snapshot(),
+		PortfolioSnapshot: c.portfolio.Snapshot(),
 	}
 }
 
-func (c *Context) applyFill(evt *execution.Event) error {
-	cashDelta := float64(evt.FilledQty) * evt.Price
+func (c *Context) Restore(s account.Snapshot) {
+	c.capital.Restore(s.CapitalSnapshot)
+	c.portfolio.Restore(s.PortfolioSnapshot)
+}
 
-	// Buy: 扣现金
-	if evt.Side == trade.Buy {
-		c.balance.Cash -= cashDelta
+// ========= 冻结相关的接口 ========
+
+func (c *Context) FreezeOrder(o *order.Order) error {
+	err := c.capital.Freeze(
+		o.OrderID,
+		o.Symbol,
+		o.Price,
+		float64(o.Quantity),
+		o.Side,
+	)
+	if err != nil {
+		return err
 	}
-
-	// Sell: 回现金 + 已实现盈亏由 Position 决定
-	if evt.Side == trade.Sell {
-		c.balance.Cash += cashDelta
-	}
-
-	c.updateAt = evt.Timestamp
+	c.makeDirty()
 	return nil
 }
 
-func (c *Context) applyFree(evt *execution.Event) error {
-	c.balance.Cash -= evt.Fee
-	c.balance.RealizedPnL -= evt.Fee
-	c.updateAt = evt.Timestamp
+func (c *Context) CommitOrder(orderID string, amount float64) error {
+	err := c.capital.Commit(orderID, amount)
+	if err != nil {
+		return err
+	}
+	c.makeDirty()
 	return nil
+}
+
+func (c *Context) ReleaseOrder(orderID string) error {
+	err := c.capital.Release(orderID)
+	if err != nil {
+		return err
+	}
+
+	c.makeDirty()
+	return nil
+}
+
+// ========= Dirty标记机制 =========
+
+func (c *Context) makeDirty() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.dirty = true
+}
+
+func (c *Context) ConsumeDirty() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.dirty {
+		c.dirty = false
+		return true
+	}
+	return false
 }

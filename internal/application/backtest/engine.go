@@ -8,6 +8,8 @@ import (
 	runtime2 "quant-trading/internal/application/runtime"
 	strategyengine "quant-trading/internal/application/strategy"
 	dAccount "quant-trading/internal/domain/account"
+	"quant-trading/internal/domain/capital"
+	"quant-trading/internal/domain/portfolio"
 	"quant-trading/internal/domain/strategy"
 	"time"
 )
@@ -71,11 +73,12 @@ func NewEngine(
 	// 创建回测时钟
 	clock := NewClock(config.StartTime)
 
+	capi := capital.NewCashEngine(config.InitialCash)
+	acc := dAccount.Account{AccountID: "tests"}
+	port := portfolio.NewSimplePortfolio()
+
 	// 创建账户上下文
-	accountCtx := account.NewContext(dAccount.Config{
-		AccountID:   "backtest_account",
-		InitialCash: config.InitialCash,
-	})
+	accountCtx := account.NewContext(acc, capi, port)
 
 	// 创建策略上下文
 	stgCtx := strategy.NewContext()
@@ -158,7 +161,7 @@ func (e *Engine) Stop() error {
 
 // generateResult 生成回测结果
 func (e *Engine) generateResult() *Result {
-	finalCash := e.accountCtx.Cash()
+	finalCash := e.accountCtx.TotalCapital()
 	finalEquity := e.accountCtx.Equity()
 	realizedPnL := e.accountCtx.RealizedPnL()
 

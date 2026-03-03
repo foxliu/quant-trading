@@ -1,4 +1,4 @@
-// Package domain position 持仓
+// Package portfolio  持仓
 package portfolio
 
 import (

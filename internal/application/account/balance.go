@@ -11,5 +11,5 @@ func (c *Context) recalculateEquity() {
 	//     equity += float64(pos.Qty) * pos.AvgPrice
 	// }
 	// c.balance.Equity = equity
-	c.balance.Equity = c.balance.Cash
+	c.balance.Equity = c.TotalCapital()
 }

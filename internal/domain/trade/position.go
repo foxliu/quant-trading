@@ -21,6 +21,8 @@ type Position struct {
 
 	AvgPrice float64 // 加权平均成本价
 
+	LastPrice float64
+
 	OpenTime time.Time
 	UpdateAt time.Time
 }
@@ -35,4 +37,8 @@ func (p *Position) IsLong() bool {
 
 func (p *Position) IsShort() bool {
 	return p.Qty < 0
+}
+
+func (p *Position) UnrealizedPnL() float64 {
+	return float64(p.Qty) * (p.LastPrice - p.AvgPrice)
 }

@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"errors"
+	"quant-trading/internal/domain/account"
 	"sync"
 )
 
@@ -132,16 +133,16 @@ func (s *Scheduler) SetPriority(accountID string, priority int) error {
 }
 
 // GetAllSnapshots 获取所有账户快照
-func (s *Scheduler) GetAllSnapshots() []Snapshot {
+func (s *Scheduler) GetAllSnapshots() []account.Snapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	snapshots := make([]Snapshot, 0, len(s.accounts))
+	snapshots := make([]account.Snapshot, 0, len(s.accounts))
 	for _, ctx := range s.accounts {
 		ctx.mu.Lock()
-		snapshot := Snapshot{
-			Balance: ctx.balance,
-			At:      ctx.updateAt,
+		snapshot := account.Snapshot{
+			CapitalSnapshot:   ctx.capital.Snapshot(),
+			PortfolioSnapshot: ctx.portfolio.Snapshot(),
 		}
 		ctx.mu.Unlock()
 		snapshots = append(snapshots, snapshot)
