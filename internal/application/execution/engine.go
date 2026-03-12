@@ -2,7 +2,7 @@ package execution
 
 import (
 	"context"
-	"quant-trading/internal/domain/order"
+	"quant-trading/internal/domain/execution"
 )
 
 /*
@@ -21,7 +21,7 @@ Execution Engine 的职责：
 */
 type Engine interface {
 	// Submit 提交一个业务订单进行执行
-	Submit(ctx context.Context, ord *order.Order) error
+	Submit(ctx context.Context, ord *execution.Order) error
 
 	// RegisterListener 注册执行回报监听器
 	RegisterListener(listener Listener)

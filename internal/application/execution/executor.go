@@ -1,6 +1,8 @@
 package execution
 
-import "quant-trading/internal/domain/trade"
+import (
+	"quant-trading/internal/domain/trade"
+)
 
 /*
 真正下单

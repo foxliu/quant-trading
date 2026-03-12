@@ -1,9 +1,11 @@
 package portfolio
 
-import "quant-trading/internal/domain/trade"
+import (
+	"quant-trading/internal/domain/execution"
+)
 
 type Engine interface {
-	UpdateFill(symbol string, side trade.Side, qty int64, price float64)
+	UpdateFill(symbol string, side execution.Side, price float64, qty int64)
 	UpdateMarkPrice(symbol string, price float64)
 
 	UnrealizedPnL() float64

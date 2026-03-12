@@ -45,3 +45,12 @@ type Event struct {
 
 	Fee float64 // 费用
 }
+
+type SubmitOrderEvent struct {
+	AccountID  string
+	StrategyID string
+	Symbol     string
+	Side       Side
+	Quantity   int64
+	Price      float64
+}

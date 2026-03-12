@@ -2,7 +2,7 @@ package capital
 
 import (
 	"errors"
-	"quant-trading/internal/domain/trade"
+	"quant-trading/internal/domain/execution"
 	"sync"
 )
 
@@ -27,7 +27,7 @@ func NewCashEngine(initial float64) *CashEngine {
 	}
 }
 
-func (e *CashEngine) Freeze(orderID, symbol string, price float64, qty float64, side trade.Side) error {
+func (e *CashEngine) Freeze(orderID, symbol string, price float64, qty float64, side execution.Side) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 

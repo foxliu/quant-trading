@@ -1,7 +1,7 @@
 package portfolio
 
 import (
-	"quant-trading/internal/domain/trade"
+	"quant-trading/internal/domain/execution"
 	"quant-trading/pkg/utils"
 	"sync"
 )
@@ -26,7 +26,7 @@ func NewSimplePortfolio() *SimplePortfolio {
 	}
 }
 
-func (p *SimplePortfolio) UpdateFill(symbol string, side trade.Side, qty int64, price float64) {
+func (p *SimplePortfolio) UpdateFill(symbol string, side execution.Side, price float64, qty int64) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -37,7 +37,7 @@ func (p *SimplePortfolio) UpdateFill(symbol string, side trade.Side, qty int64, 
 	}
 
 	signedQty := qty
-	if side == trade.Sell {
+	if side == execution.Sell {
 		signedQty = -qty
 	}
 

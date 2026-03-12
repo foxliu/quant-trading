@@ -2,8 +2,8 @@ package instrument
 
 import (
 	"errors"
+	"quant-trading/internal/domain/execution"
 	"quant-trading/internal/domain/instrument"
-	"quant-trading/internal/domain/order"
 	"time"
 )
 
@@ -59,7 +59,7 @@ func NewOptionsAdapter(
 }
 
 // ValidateOrder 验证订单
-func (a *OptionsAdapter) ValidateOrder(ord *order.Order) error {
+func (a *OptionsAdapter) ValidateOrder(ord *execution.Order) error {
 	// 检查合约是否到期
 	if a.IsExpired() {
 		return errors.New("options contract has expired")

@@ -1,8 +1,8 @@
 package instrument
 
 import (
+	"quant-trading/internal/domain/execution"
 	"quant-trading/internal/domain/instrument"
-	"quant-trading/internal/domain/order"
 )
 
 /*
@@ -21,7 +21,7 @@ type Adapter interface {
 	GetType() instrument.Type
 
 	// ValidateOrder 验证订单是否符合资产规则
-	ValidateOrder(ord *order.Order) error
+	ValidateOrder(ord *execution.Order) error
 
 	// CalculateMargin 计算保证金(期货/期权)
 	CalculateMargin(qty int64, price float64) float64

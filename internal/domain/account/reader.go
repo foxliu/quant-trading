@@ -22,9 +22,9 @@ type Reader interface {
 	RealizedPnL() float64
 
 	// UnrealizedPnL 返回未实现盈亏
-	UnrealizedPnL() float64
+	//UnrealizedPnL() float64
 
 	Available() float64
-	Frozen() float64
+	//Frozen() float64
 	TotalCapital() float64
 }

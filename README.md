@@ -223,3 +223,17 @@ Account Context
 
 ```
 ___
+## 交易执行链
+```text
+Strategy
+   ↓
+ExecutionAdapter.SubmitOrder()
+   ↓
+OrderManager.CreateOrder()
+   ↓
+MatchingEngine.Match()
+   ↓
+Account.ApplyFill()
+   ↓
+Snapshot 更新
+```

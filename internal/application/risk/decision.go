@@ -1,7 +1,9 @@
 package risk
 
-import "quant-trading/internal/domain/order"
+import (
+	"quant-trading/internal/domain/execution"
+)
 
 type Decision struct {
-	Orders []order.Order
+	Orders []execution.Order
 }

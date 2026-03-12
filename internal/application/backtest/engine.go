@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"quant-trading/internal/application/account"
+	"quant-trading/internal/application/backtest/performance"
 	"quant-trading/internal/application/event"
 	runtime2 "quant-trading/internal/application/runtime"
 	strategyengine "quant-trading/internal/application/strategy"
@@ -36,19 +37,18 @@ type Engine struct {
 	// 回测时钟
 	clock *Clock
 
-	// 模拟撮合引擎
-	simulator *Simulator
-
 	// 数据源
 	dataSource DataSource
-
 	// 账户上下文
 	accountCtx *account.Context
 
-	// 回测配置
+	execAdapter   *ExecutionAdapter
+	orderExecutor *OrderExecutor
+
+	equityRecorder *performance.EquityRecorder
+
 	config Config
 
-	// 上下文
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -73,16 +73,13 @@ func NewEngine(
 	// 创建回测时钟
 	clock := NewClock(config.StartTime)
 
+	// ==== Account ====
 	capi := capital.NewCashEngine(config.InitialCash)
-	acc := dAccount.Account{AccountID: "tests"}
+	acc := &dAccount.Account{AccountID: "tests"}
 	port := portfolio.NewSimplePortfolio()
 
 	// 创建账户上下文
 	accountCtx := account.NewContext(acc, capi, port)
-
-	// 创建策略上下文
-	stgCtx := strategy.NewContext()
-	stgCtx.SetAccountContext(accountCtx)
 
 	bus := event.NewMemoryBus()
 	recorder := event.NewMemoryRecorder()
@@ -96,15 +93,24 @@ func NewEngine(
 	// 创建策略引擎
 	strategyEngine := strategyengine.NewEngine(dispatcher)
 
-	// 创建模拟撮合引擎
-	simulator := NewSimulator(config.Commission, config.Slippage)
+	// ===== Execution =====
+	execAdapter := NewExecutionAdapter(accountCtx)
+	orderExecutor := NewOrderExecutor(execAdapter)
+
+	// 订阅订单事件
+	recordingBus.Subscribe(event.EventOrderEvent, orderExecutor.Handle)
+
+	// ==== Performance =====
+	equityRecorder := performance.NewEquityRecorder()
 
 	return &Engine{
 		strategyEngine: strategyEngine,
 		clock:          clock,
-		simulator:      simulator,
 		dataSource:     dataSource,
 		accountCtx:     accountCtx,
+		execAdapter:    execAdapter,
+		orderExecutor:  orderExecutor,
+		equityRecorder: equityRecorder,
 		config:         config,
 	}
 }
@@ -141,14 +147,16 @@ func (e *Engine) Run(ctx context.Context) (*Result, error) {
 				e.strategyEngine.OnMarketEvent(evt)
 			}
 
+			snapshot := e.accountCtx.Snapshot()
+			e.equityRecorder.Record(e.clock.Now(), snapshot)
+
 			// 推进时钟
 			e.clock.Advance(1 * time.Minute)
 		}
 	}
 
 	// 生成回测报告
-	result := e.generateResult()
-	return result, nil
+	return e.generateResult(), nil
 }
 
 // Stop 停止回测
@@ -161,18 +169,19 @@ func (e *Engine) Stop() error {
 
 // generateResult 生成回测结果
 func (e *Engine) generateResult() *Result {
-	finalCash := e.accountCtx.TotalCapital()
+	points := e.equityRecorder.Points()
+	report := performance.GenerateReport(points)
 	finalEquity := e.accountCtx.Equity()
-	realizedPnL := e.accountCtx.RealizedPnL()
 
 	return &Result{
 		StartTime:   e.config.StartTime,
 		EndTime:     e.config.EndTime,
 		InitialCash: e.config.InitialCash,
-		FinalCash:   finalCash,
+		FinalCash:   e.accountCtx.TotalCapital(),
 		FinalEquity: finalEquity,
-		RealizedPnL: realizedPnL,
-		TotalReturn: (finalEquity - e.config.InitialCash) / e.config.InitialCash,
+		RealizedPnL: e.accountCtx.RealizedPnL(),
+		TotalReturn: report.TotalReturn,
+		MaxDrawdown: report.MaxDrawdown,
 	}
 }
 
@@ -185,4 +194,5 @@ type Result struct {
 	FinalEquity float64
 	RealizedPnL float64
 	TotalReturn float64 // 总收益率
+	MaxDrawdown float64
 }
