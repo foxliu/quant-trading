@@ -1,13 +1,16 @@
 package execution
 
-import "time"
+import (
+	"quant-trading/internal/domain/order"
+	"time"
+)
 
 type Fill struct {
 	OrderID   string
 	AccountID string
 
 	Symbol string
-	Side   Side
+	Side   order.Side
 
 	Qty   int64
 	Price float64

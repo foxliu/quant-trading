@@ -3,7 +3,7 @@ package risk
 // FROZEN: V1
 
 import (
-	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/strategy"
 )
 
@@ -22,10 +22,10 @@ Planner 的工程职责（当前阶段）：
 - 不阻塞上游
 */
 type Planner struct {
-	output chan<- execution.Order
+	output chan<- order.Order
 }
 
-func NewPlanner(output chan<- execution.Order) *Planner {
+func NewPlanner(output chan<- order.Order) *Planner {
 	return &Planner{
 		output: output,
 	}
@@ -42,7 +42,7 @@ func (p *Planner) Consume(signal strategy.Signal) {
 	}
 }
 
-func (p *Planner) plan(signal strategy.Signal) []execution.Order {
+func (p *Planner) plan(signal strategy.Signal) []order.Order {
 	switch signal.Intent {
 	case strategy.IntentLong:
 		return p.openLong(signal)

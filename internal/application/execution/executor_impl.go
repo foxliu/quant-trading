@@ -2,7 +2,7 @@ package execution
 
 import (
 	"fmt"
-	"quant-trading/internal/domain/trade"
+	"quant-trading/internal/domain/order"
 )
 
 /*
@@ -15,7 +15,7 @@ func NewDummyExecutor() Executor {
 	return &dummyExecutor{}
 }
 
-func (e *dummyExecutor) MarketClose(symbol string, side trade.Side, qty int64) error {
+func (e *dummyExecutor) MarketClose(symbol string, side order.Side, qty int64) error {
 	fmt.Printf("[Exec] market close %s %s qty=%d\n", symbol, side, qty)
 	return nil
 }

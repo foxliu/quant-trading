@@ -2,7 +2,7 @@ package portfolio
 
 type PositionSnapshot struct {
 	Symbol    string
-	Quantity  int64
+	Quantity  float64
 	AvgPrice  float64
 	LastPrice float64
 }

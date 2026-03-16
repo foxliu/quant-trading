@@ -3,10 +3,11 @@ package execution
 import (
 	"quant-trading/internal/application/account"
 	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 )
 
 type Adapter interface {
-	Execute(order execution.Order) ([]execution.Fill, error)
+	Execute(order order.Order) ([]execution.Fill, error)
 }
 
 type Service struct {
@@ -21,7 +22,7 @@ func NewService(adapter Adapter, account *account.Context) *Service {
 	}
 }
 
-func (s *Service) Submit(order execution.Order) error {
+func (s *Service) Submit(order order.Order) error {
 	fills, err := s.adapter.Execute(order)
 	if err != nil {
 		return err

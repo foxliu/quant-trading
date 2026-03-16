@@ -2,6 +2,7 @@ package backtest
 
 import (
 	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 	"time"
 )
 
@@ -13,7 +14,7 @@ func NewSimulator(priceProvider func(symbol string) float64) *Simulator {
 	return &Simulator{priceProvider: priceProvider}
 }
 
-func (s *Simulator) Execute(order execution.Order) ([]execution.Fill, error) {
+func (s *Simulator) Execute(order order.Order) ([]execution.Fill, error) {
 	price := s.priceProvider(order.Symbol())
 
 	fill := execution.Fill{

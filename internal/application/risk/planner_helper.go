@@ -3,7 +3,7 @@ package risk
 // FROZEN: V1
 
 import (
-	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/strategy"
 	"quant-trading/internal/domain/trade"
 	"time"
@@ -20,23 +20,23 @@ Execution Planning Helpers
 */
 
 // 开多仓
-func (p *Planner) openLong(signal strategy.Signal) []execution.Order {
-	o := execution.Order{
+func (p *Planner) openLong(signal strategy.Signal) []order.Order {
+	o := order.Order{
 		StrategyID: signal.StrategyID,
 		Symbol:     signal.Symbol,
 		Side:       trade.Buy,
 		Intent:     strategy.IntentLong,
 		Quantity:   int64(signal.TargetQty), // 此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
 		Price:      signal.Price,
-		Status:     execution.Pending,
+		Status:     order.StatusPending,
 		CreatedAt:  time.Now(),
 	}
-	return []execution.Order{o}
+	return []order.Order{o}
 }
 
 // 开空仓
-func (p *Planner) openShort(signal strategy.Signal) []execution.Order {
-	o := execution.Order{
+func (p *Planner) openShort(signal strategy.Signal) []order.Order {
+	o := order.Order{
 		StrategyID: signal.StrategyID,
 		Symbol:     signal.Symbol,
 
@@ -46,15 +46,15 @@ func (p *Planner) openShort(signal strategy.Signal) []execution.Order {
 		Quantity: int64(signal.TargetQty), //此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
 		Price:    signal.Price,
 
-		Status:    execution.Pending,
+		Status:    order.StatusPending,
 		CreatedAt: time.Now(),
 	}
-	return []execution.Order{o}
+	return []order.Order{o}
 }
 
 // 平仓
-func (p *Planner) closePosition(signal strategy.Signal) []execution.Order {
-	o := execution.Order{
+func (p *Planner) closePosition(signal strategy.Signal) []order.Order {
+	o := order.Order{
 		OrderID:    "",
 		StrategyID: signal.StrategyID,
 		Symbol:     signal.Symbol,
@@ -62,8 +62,8 @@ func (p *Planner) closePosition(signal strategy.Signal) []execution.Order {
 		Intent:     strategy.IntentFlat,
 		Quantity:   int64(signal.TargetQty), // 此处 Quantity 暂时等于 TargetQty 后续会由 Position Engine 修正为 Delta
 		Price:      signal.Price,
-		Status:     execution.Pending,
+		Status:     order.StatusPending,
 		CreatedAt:  time.Now(),
 	}
-	return []execution.Order{o}
+	return []order.Order{o}
 }

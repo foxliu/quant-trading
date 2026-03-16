@@ -3,7 +3,7 @@ package backtest
 import (
 	"quant-trading/internal/application/account"
 	"quant-trading/internal/application/execution"
-	execution2 "quant-trading/internal/domain/execution"
+	execution2 "quant-trading/internal/domain/order"
 )
 
 type ExecutionAdapter struct {

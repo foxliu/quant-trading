@@ -4,7 +4,7 @@ import (
 	"context"
 	"quant-trading/internal/application/position"
 	"quant-trading/internal/application/risk"
-	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/strategy"
 )
 
@@ -19,9 +19,9 @@ type Pipeline struct {
 	signalCh <-chan strategy.Signal
 
 	// 内部通道
-	orderCh1 chan execution.Order // planner -> Position
-	orderCh2 chan execution.Order // Position -> Risk
-	orderCh3 chan execution.Order // Risk -> Execution (保留）
+	orderCh1 chan order.Order // planner -> Position
+	orderCh2 chan order.Order // Position -> Risk
+	orderCh3 chan order.Order // Risk -> Execution (保留）
 
 	// 组件
 	planner *risk.Planner
@@ -34,9 +34,9 @@ func NewPipeline(
 	positionCtx *position.Context,
 	riskCtx *risk.Context,
 ) *Pipeline {
-	orderCh1 := make(chan execution.Order, 1024)
-	orderCh2 := make(chan execution.Order, 1024)
-	orderCh3 := make(chan execution.Order, 1024)
+	orderCh1 := make(chan order.Order, 1024)
+	orderCh2 := make(chan order.Order, 1024)
+	orderCh3 := make(chan order.Order, 1024)
 
 	planner := risk.NewPlanner(orderCh1)
 

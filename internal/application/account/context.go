@@ -3,7 +3,7 @@ package account
 import (
 	"quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/capital"
-	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/portfolio"
 	"time"
 )
@@ -97,6 +97,6 @@ func (c *Context) Restore(s account.Snapshot) {
 	c.realizedPnL = s.RealizedPnL
 }
 
-func (c *Context) ApplyFill(symbol string, side execution.Side, price float64, qty int64) {
+func (c *Context) ApplyFill(symbol string, side order.Side, price float64, qty float64) {
 	c.portfolio.UpdateFill(symbol, side, price, qty)
 }

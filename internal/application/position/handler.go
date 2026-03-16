@@ -20,7 +20,7 @@ func (c *Context) OnExecutionEvent(evt *execution.Event) error {
 		return c.applyFill(evt)
 
 	default:
-		// Accepted / Rejected / Canceled 不影响 Position
+		// Accepted / StatusRejected / StatusCanceled 不影响 Position
 		return nil
 	}
 }

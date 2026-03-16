@@ -5,6 +5,7 @@ import (
 	"errors"
 	"quant-trading/internal/application/execution"
 	dExecution "quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 	"time"
 )
 
@@ -29,7 +30,7 @@ func (e *PaperExecution) RegisterListener(l execution.Listener) {
 	e.listener = l
 }
 
-func (e *PaperExecution) Submit(ctx context.Context, ord *dExecution.Order) error {
+func (e *PaperExecution) Submit(ctx context.Context, ord *order.Order) error {
 	if e.listener == nil {
 		return errors.New("execution listener not registered")
 	}

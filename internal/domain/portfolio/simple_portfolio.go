@@ -1,14 +1,14 @@
 package portfolio
 
 import (
-	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 	"quant-trading/pkg/utils"
 	"sync"
 )
 
 type position struct {
 	symbol    string
-	quantity  int64
+	quantity  float64
 	avgPrice  float64
 	lastPrice float64
 }
@@ -26,7 +26,7 @@ func NewSimplePortfolio() *SimplePortfolio {
 	}
 }
 
-func (p *SimplePortfolio) UpdateFill(symbol string, side execution.Side, price float64, qty int64) {
+func (p *SimplePortfolio) UpdateFill(symbol string, side order.Side, price float64, qty float64) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -37,7 +37,7 @@ func (p *SimplePortfolio) UpdateFill(symbol string, side execution.Side, price f
 	}
 
 	signedQty := qty
-	if side == execution.Sell {
+	if side == order.Sell {
 		signedQty = -qty
 	}
 
@@ -46,11 +46,11 @@ func (p *SimplePortfolio) UpdateFill(symbol string, side execution.Side, price f
 	if pos.quantity == 0 {
 		pos.avgPrice = price
 	} else if (pos.quantity > 0 && signedQty > 0) || (pos.quantity < 0 && signedQty < 0) {
-		totalCost := float64(pos.quantity)*pos.avgPrice + float64(signedQty)*price
-		pos.avgPrice = totalCost / float64(newQty)
+		totalCost := pos.quantity*pos.avgPrice + signedQty*price
+		pos.avgPrice = totalCost / newQty
 	} else {
 		closeQty := min(utils.Abs(pos.quantity), utils.Abs(signedQty))
-		p.realized += float64(closeQty) * (price - pos.avgPrice) * utils.Sign(pos.quantity)
+		p.realized += closeQty * (price - pos.avgPrice) * utils.Sign(pos.quantity)
 	}
 	pos.quantity = newQty
 }
@@ -70,7 +70,7 @@ func (p *SimplePortfolio) UnrealizedPnL() float64 {
 
 	total := 0.0
 	for _, pos := range p.positions {
-		total += float64(pos.quantity) * (pos.lastPrice - pos.avgPrice)
+		total += pos.quantity * (pos.lastPrice - pos.avgPrice)
 	}
 	return total
 }

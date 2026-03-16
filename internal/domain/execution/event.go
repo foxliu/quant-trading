@@ -1,7 +1,7 @@
 package execution
 
 import (
-	"quant-trading/internal/domain/trade"
+	"quant-trading/internal/domain/order"
 	"time"
 )
 
@@ -36,8 +36,8 @@ type Event struct {
 
 	Type EventType
 
-	Side      trade.Side // Buy / Sell
-	FilledQty int64      // 本次事件的成效数量（非累计）
+	Side      order.Side // Buy / Sell
+	FilledQty float64    // 本次事件的成效数量（非累计）
 	Price     float64    // 成交价（如适用）
 
 	Timestamp time.Time
@@ -50,7 +50,7 @@ type SubmitOrderEvent struct {
 	AccountID  string
 	StrategyID string
 	Symbol     string
-	Side       Side
-	Quantity   int64
+	Side       order.Side
+	Quantity   float64
 	Price      float64
 }

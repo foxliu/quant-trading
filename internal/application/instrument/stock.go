@@ -2,8 +2,8 @@ package instrument
 
 import (
 	"errors"
-	"quant-trading/internal/domain/execution"
 	"quant-trading/internal/domain/instrument"
+	"quant-trading/internal/domain/order"
 )
 
 /*
@@ -34,7 +34,7 @@ func NewStockAdapter() *StockAdapter {
 }
 
 // ValidateOrder 验证订单
-func (a *StockAdapter) ValidateOrder(ord *execution.Order) error {
+func (a *StockAdapter) ValidateOrder(ord *order.Order) error {
 	// 检查数量是否为最小交易单位的整数倍
 	if ord.Quantity%a.minLot != 0 {
 		return errors.New("order quantity must be multiple of min lot size")

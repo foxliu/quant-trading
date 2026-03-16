@@ -3,6 +3,7 @@ package trade
 
 import (
 	"quant-trading/internal/domain/instrument"
+	"quant-trading/internal/domain/order"
 	"time"
 )
 
@@ -11,7 +12,7 @@ type Trade struct {
 	OrderID    string
 	Instrument instrument.Instrument
 
-	Side     Side
+	Side     order.Side
 	Price    float64
 	Quantity float64
 	Time     time.Time

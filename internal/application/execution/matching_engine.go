@@ -2,7 +2,7 @@ package execution
 
 import (
 	"quant-trading/internal/domain/account"
-	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 )
 
 type MatchingEngine struct {
@@ -14,7 +14,7 @@ func NewMatchingEngine(feeRate float64) *MatchingEngine {
 }
 
 // Match 回测简化： 全部按当前价格立即成交
-func (m *MatchingEngine) Match(o *execution.Order, marketPrice float64) account.Fill {
+func (m *MatchingEngine) Match(o *order.Order, marketPrice float64) account.Fill {
 	fee := marketPrice * o.Qty() * m.feeRate
 
 	return account.Fill{
@@ -26,8 +26,8 @@ func (m *MatchingEngine) Match(o *execution.Order, marketPrice float64) account.
 	}
 }
 
-func convertSide(s execution.Side) account.Side {
-	if s == execution.Buy {
+func convertSide(s order.Side) account.Side {
+	if s == order.Buy {
 		return account.Buy
 	}
 	return account.Sell

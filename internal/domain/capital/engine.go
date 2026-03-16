@@ -11,11 +11,11 @@ Futures Cross Margin    期货交叉保证金
 */
 
 import (
-	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 )
 
 type Engine interface {
-	Freeze(orderID string, symbol string, price float64, qty float64, side execution.Side) error
+	Freeze(orderID string, symbol string, price float64, qty float64, side order.Side) error
 	Commit(orderID string, amount float64) error
 	Release(orderID string) error
 
