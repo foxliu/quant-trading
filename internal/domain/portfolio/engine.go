@@ -5,7 +5,7 @@ import (
 )
 
 type Engine interface {
-	UpdateFill(symbol string, side order.Side, price float64, qty float64)
+	UpdateFill(symbol string, side order.Side, price float64, qty int64)
 	UpdateMarkPrice(symbol string, price float64)
 
 	UnrealizedPnL() float64

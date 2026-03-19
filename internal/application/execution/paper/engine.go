@@ -39,21 +39,21 @@ func (e *PaperExecution) Submit(ctx context.Context, ord *order.Order) error {
 
 	// 1. Order Accept
 	e.listener.OnExecutionEvent(ctx, &dExecution.Event{
-		OrderID:   ord.OrderID,
-		Symbol:    ord.Symbol,
+		OrderID:   ord.ID(),
+		Symbol:    ord.Symbol(),
 		Type:      dExecution.OrderAccepted,
-		Side:      ord.Side,
+		Side:      ord.Side(),
 		Timestamp: now,
 	})
 
 	// 2. 直接全部成交（最简单模型）
 	e.listener.OnExecutionEvent(ctx, &dExecution.Event{
-		OrderID:   ord.OrderID,
-		Symbol:    ord.Symbol,
+		OrderID:   ord.ID(),
+		Symbol:    ord.Symbol(),
 		Type:      dExecution.OrderFilled,
-		Side:      ord.Side,
-		FilledQty: ord.Quantity,
-		Price:     ord.Price,
+		Side:      ord.Side(),
+		FilledQty: ord.Qty(),
+		Price:     ord.Price(),
 		Timestamp: now.Add(1 * time.Millisecond),
 	})
 	return nil

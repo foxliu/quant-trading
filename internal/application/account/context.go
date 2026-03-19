@@ -97,6 +97,6 @@ func (c *Context) Restore(s account.Snapshot) {
 	c.realizedPnL = s.RealizedPnL
 }
 
-func (c *Context) ApplyFill(symbol string, side order.Side, price float64, qty float64) {
+func (c *Context) ApplyFill(symbol string, side order.Side, price float64, qty int64) {
 	c.portfolio.UpdateFill(symbol, side, price, qty)
 }

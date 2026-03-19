@@ -1,6 +1,9 @@
 package trade
 
-import "time"
+import (
+	"quant-trading/internal/domain/instrument"
+	"time"
+)
 
 /*
 Position
@@ -15,7 +18,8 @@ Qty 含义：
 - Qty = 0 : 无仓位（Position 不存在）
 */
 type Position struct {
-	Symbol string
+	Instrument instrument.Instrument
+	Symbol     string
 
 	Qty int64 // 当前持仓数量（绝对值）
 

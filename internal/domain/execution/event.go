@@ -22,6 +22,8 @@ const (
 	OrderRejected        EventType = "REJECTED"
 
 	FreeCharged EventType = "FREE_CHARGED"
+
+	EventDisconnected EventType = "DISCONNECTED"
 )
 
 /*

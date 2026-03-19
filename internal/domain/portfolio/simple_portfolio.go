@@ -26,7 +26,7 @@ func NewSimplePortfolio() *SimplePortfolio {
 	}
 }
 
-func (p *SimplePortfolio) UpdateFill(symbol string, side order.Side, price float64, qty float64) {
+func (p *SimplePortfolio) UpdateFill(symbol string, side order.Side, price float64, qty int64) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -36,9 +36,9 @@ func (p *SimplePortfolio) UpdateFill(symbol string, side order.Side, price float
 		p.positions[symbol] = pos
 	}
 
-	signedQty := qty
+	signedQty := float64(qty)
 	if side == order.Sell {
-		signedQty = -qty
+		signedQty = -float64(qty)
 	}
 
 	newQty := pos.quantity + signedQty

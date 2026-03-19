@@ -99,8 +99,8 @@ func (b *PaperBroker) GetBalance(ctx context.Context) (cash float64, equity floa
 	return b.accountCtx.Available(), b.accountCtx.Equity(), nil
 }
 
-// SubmitOrderEvent 实现 Broker 适配器接口
-func (b *PaperBroker) SubmitOrderEvent(ctx context.Context) <-chan execution.Event {
+// SubscribeEvents 实现 Broker 适配器接口
+func (b *PaperBroker) SubscribeEvents(ctx context.Context) <-chan execution.Event {
 	return b.events
 }
 

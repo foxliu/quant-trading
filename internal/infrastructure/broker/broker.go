@@ -17,6 +17,6 @@ type Broker interface {
 	GetPositions(ctx context.Context) ([]trade.Position, error)
 	// GetBalance 获取账户余额 (现金+权益）
 	GetBalance(ctx context.Context) (float64, float64, error)
-	// SubmitSubscribe 订阅成交/订单事件（供execution engine 使用)
-	SubmitSubscribe(ctx context.Context) <-chan execution.Event
+	// SubscribeEvents 订阅成交/订单事件（供execution engine 使用)
+	SubscribeEvents(ctx context.Context) <-chan execution.Event
 }
