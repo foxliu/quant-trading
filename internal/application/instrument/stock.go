@@ -36,12 +36,12 @@ func NewStockAdapter() *StockAdapter {
 // ValidateOrder 验证订单
 func (a *StockAdapter) ValidateOrder(ord *order.Order) error {
 	// 检查数量是否为最小交易单位的整数倍
-	if ord.Quantity%a.minLot != 0 {
+	if ord.Qty()%a.minLot != 0 {
 		return errors.New("order quantity must be multiple of min lot size")
 	}
 
 	// 检查价格是否为正
-	if ord.Price <= 0 {
+	if ord.Price() <= 0 {
 		return errors.New("order price must be positive")
 	}
 

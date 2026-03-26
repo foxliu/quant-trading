@@ -2,7 +2,7 @@ package execution
 
 import (
 	"errors"
-	"quant-trading/internal/domain/trade"
+	"quant-trading/internal/domain/order"
 	"quant-trading/pkg/utils"
 )
 
@@ -44,15 +44,15 @@ func (c *controller) forceClose(cmd Command) error {
 	}
 
 	// 3. 计算平仓方向
-	var side trade.Side
+	var side order.Side
 	qty := utils.Abs(pos.Qty)
 
 	if pos.Qty > 0 {
 		// 多头 → 卖出
-		side = trade.Sell
+		side = order.Sell
 	} else {
 		// 空头 → 买入
-		side = trade.Buy
+		side = order.Buy
 	}
 
 	// 4. 市价强平

@@ -6,27 +6,6 @@ import (
 )
 
 /*
-EventType
-=========
-
-Execution Event 是“执行事实”，不是业务意图
-*/
-type EventType string
-
-const (
-	OrderSubmitted       EventType = "SUBMITTED"
-	OrderAccepted        EventType = "ACCEPTED"
-	OrderPartiallyFilled EventType = "PARTIALLY_FILLED"
-	OrderFilled          EventType = "FILLED"
-	OrderCanceled        EventType = "CANCELED"
-	OrderRejected        EventType = "REJECTED"
-
-	FreeCharged EventType = "FREE_CHARGED"
-
-	EventDisconnected EventType = "DISCONNECTED"
-)
-
-/*
 Event
 =====
 
@@ -38,9 +17,9 @@ type Event struct {
 
 	Type EventType
 
-	Side      order.Side // Buy / Sell
-	FilledQty float64    // 本次事件的成效数量（非累计）
-	Price     float64    // 成交价（如适用）
+	Side     order.Side // Buy / Sell
+	Quantity int64      // 本次事件的成效数量（非累计）
+	Price    float64    // 成交价（如适用）
 
 	Timestamp time.Time
 	Reason    string // 拒单 / 取消原因

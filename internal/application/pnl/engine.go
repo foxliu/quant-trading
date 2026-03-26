@@ -30,7 +30,7 @@ func (e *Engine) Revaluate(
 		exposure = float64(utils.Abs(pos.Qty)) * marketPrice
 	}
 
-	equity := balance.Cash + unrealized
+	equity := balance.Available() + unrealized
 
 	return Result{
 		UnrealizedPnL: unrealized,

@@ -3,6 +3,7 @@ package position
 import (
 	"errors"
 	"quant-trading/internal/domain/execution"
+	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/trade"
 	"quant-trading/pkg/utils"
 	"time"
@@ -13,10 +14,10 @@ func (c *Context) OnExecutionEvent(evt *execution.Event) error {
 	defer c.mu.Unlock()
 
 	switch evt.Type {
-	case execution.OrderFilled:
+	case execution.EventOrderFilled:
 		return c.applyFill(evt)
 
-	case execution.OrderPartiallyFilled:
+	case execution.EventOrderPartiallyFilled:
 		return c.applyFill(evt)
 
 	default:
@@ -37,7 +38,7 @@ func (c *Context) applyFill(evt *execution.Event) error {
 
 	// Buy = +qty, Sell = -qty
 	delta := evt.FilledQty
-	if evt.Side == trade.Sell {
+	if evt.Side == order.Sell {
 		delta = -delta
 	}
 

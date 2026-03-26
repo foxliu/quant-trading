@@ -71,7 +71,7 @@ func (b *PaperBroker) CancelOrder(ctx context.Context, orderID string) error {
 	b.events <- execution.Event{
 		OrderID:   orderID,
 		Symbol:    ord.Symbol(),
-		Type:      execution.OrderCanceled,
+		Type:      execution.EventOrderCanceled,
 		Side:      ord.Side(),
 		FilledQty: ord.Qty(),
 		Price:     ord.Price(),
@@ -121,7 +121,7 @@ func (b *PaperBroker) simulateFill(ord *order.Order) {
 
 	// 推送事件（供 execution engine、position、pnl 使用）
 	b.events <- execution.Event{
-		Type:      execution.OrderFilled,
+		Type:      execution.EventOrderFilled,
 		OrderID:   ord.ID(),
 		Price:     fillPrice,
 		FilledQty: fillQty,

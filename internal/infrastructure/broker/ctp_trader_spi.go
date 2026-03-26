@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var log = logger.Logger.With(zap.String("file", "infrastructure/broker/ctp_trader_spi.go"))
+var log = logger.Logger.With(zap.String("module", "broker.ctp_trader_spi"))
 
 // 内部SPI回调处理器（go2ctp风格）
 type ctpTraderSpi struct {
@@ -107,7 +107,7 @@ func (s *ctpTraderSpi) OnRspOrderInsert(pInputOrder *thost.CThostFtdcInputOrderF
 	if pRspInfo.ErrorID != 0 {
 		log.Warn("CTP 订单提交失败", zap.Int32("ErrorID", int32(pRspInfo.ErrorID)), zap.ByteString("ErrorMsg", pRspInfo.ErrorMsg[:]))
 		s.adapter.events <- execution.Event{
-			Type:      execution.OrderRejected,
+			Type:      execution.EventOrderRejected,
 			OrderID:   thost.BytesToString(pInputOrder.OrderRef[:]),
 			Timestamp: time.Now(),
 			Reason:    thost.BytesToString(pRspInfo.ErrorMsg[:]),
@@ -456,15 +456,15 @@ func (s *ctpTraderSpi) OnRtnOrder(pOrder *thost.CThostFtdcOrderField) {
 			s.adapter.events <- execution.Event{
 				OrderID:   orderRef,
 				Symbol:    ord.Symbol(),
-				Type:      execution.OrderFilled,
+				Type:      execution.EventOrderFilled,
 				Side:      ord.Side(),
-				FilledQty: float64(pOrder.VolumeTraded),
+				FilledQty: int64(float64(pOrder.VolumeTraded)),
 				Price:     float64(pOrder.LimitPrice),
 				Timestamp: time.Now(),
 			}
 		case thost.THOST_FTDC_OST_Canceled:
 			s.adapter.events <- execution.Event{
-				Type:      execution.OrderCanceled,
+				Type:      execution.EventOrderCanceled,
 				OrderID:   orderRef,
 				Timestamp: time.Now(),
 			}
@@ -481,10 +481,10 @@ func (s *ctpTraderSpi) OnRtnTrade(pTrade *thost.CThostFtdcTradeField) {
 
 	// 推送成交事件
 	s.adapter.events <- execution.Event{
-		Type:      execution.OrderFilled,
+		Type:      execution.EventOrderFilled,
 		OrderID:   string(pTrade.OrderRef[:]),
 		Price:     float64(pTrade.Price),
-		FilledQty: float64(pTrade.Volume),
+		FilledQty: int64(pTrade.Volume),
 		Timestamp: time.Now(),
 	}
 	// 触发 ApplyFill（通过 AccountContext，由 execution engine 处理）

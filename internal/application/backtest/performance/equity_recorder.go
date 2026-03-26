@@ -26,10 +26,10 @@ func NewEquityRecorder() *EquityRecorder {
 func (r *EquityRecorder) Record(t time.Time, s account.Snapshot) {
 	point := EquityPoint{
 		Time:          t,
-		Equity:        s.Equity,
-		Available:     s.Available,
+		Equity:        s.Balance.Frozen,
+		Available:     s.Balance.Available,
 		RealizedPnL:   s.RealizedPnL,
-		UnrealizedPnL: s.UnrealizedPnL,
+		UnrealizedPnL: s.Portfolio.Realized,
 	}
 
 	r.points = append(r.points, point)

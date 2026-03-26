@@ -1,0 +1,30 @@
+# 量化交易系统 - 实盘配置（trader.yaml）
+# 环境变量可覆盖对应字段（例如 CTP_FRONT_ADDR）
+
+ctp:
+  front_addr: "tcp://180.168.146.187:10101"   # 测试前置（生产换券商地址）
+  broker_id: "9999"
+  user_id: "your_user_id"
+  investor_id: "your_investor_id"
+  password: "your_password"
+  account_id: "paper_account_001"
+
+account:
+  initial_cash: 1000000.0   # 初始资金（单位：元）
+
+strategies:
+  - name: "MA_Cross_IH2503"
+    type: "ma_cross"
+    params:
+      short_period: 5
+      long_period: 20
+      symbol: "IH2503"
+
+logging:
+  level: "info"             # debug / info / warn / error
+  file: "logs/trader.log"
+
+# 未来可扩展
+risk:
+  max_drawdown: 0.10
+  max_position: 10

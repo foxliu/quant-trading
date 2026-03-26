@@ -41,7 +41,7 @@ func (e *PaperExecution) Submit(ctx context.Context, ord *order.Order) error {
 	e.listener.OnExecutionEvent(ctx, &dExecution.Event{
 		OrderID:   ord.ID(),
 		Symbol:    ord.Symbol(),
-		Type:      dExecution.OrderAccepted,
+		Type:      dExecution.EventOrderAccepted,
 		Side:      ord.Side(),
 		Timestamp: now,
 	})
@@ -50,7 +50,7 @@ func (e *PaperExecution) Submit(ctx context.Context, ord *order.Order) error {
 	e.listener.OnExecutionEvent(ctx, &dExecution.Event{
 		OrderID:   ord.ID(),
 		Symbol:    ord.Symbol(),
-		Type:      dExecution.OrderFilled,
+		Type:      dExecution.EventOrderFilled,
 		Side:      ord.Side(),
 		FilledQty: ord.Qty(),
 		Price:     ord.Price(),

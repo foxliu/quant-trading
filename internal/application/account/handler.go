@@ -12,8 +12,6 @@ Account 不直接参与成交计算，避免重复状态源。
 */
 
 func (c *Context) OnPositionSnapshot(snapshot *position.Snapshot) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	// TODO: 实现仓位快照管理
 	// if snapshot != nil {
@@ -27,8 +25,6 @@ func (c *Context) OnPositionSnapshot(snapshot *position.Snapshot) {
 }
 
 func (c *Context) ONExecutionEvent(evt *dExecution.Event) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	// 当前阶段： Account 不直接处理成交细节
 	// 真实的PnL 结算由 Position + PriceFree 推导

@@ -9,7 +9,7 @@ const (
 
 type Position struct {
 	symbol      string
-	qty         float64
+	qty         int64
 	avg         float64
 	realizedPnL float64
 }
@@ -22,9 +22,9 @@ func newPosition(symbol string) *Position {
 
 func (p *Position) applyFill(fill Fill) error {
 	if fill.Side == Buy {
-		totalCost := p.avg*p.qty + fill.Price*fill.Qty
+		totalCost := p.avg*float64(p.qty) + fill.Price*float64(fill.Qty)
 		p.qty += fill.Qty
-		p.avg = totalCost / p.qty
+		p.avg = totalCost / float64(p.qty)
 		return nil
 	}
 
@@ -34,7 +34,7 @@ func (p *Position) applyFill(fill Fill) error {
 	}
 
 	// 计算已实现盈亏
-	pnl := (fill.Price - p.avg) * fill.Qty
+	pnl := (fill.Price - p.avg) * float64(fill.Qty)
 	p.realizedPnL += pnl
 
 	p.qty -= fill.Qty
@@ -57,20 +57,20 @@ func (p *Position) rollbackFill(fill Fill) {
 }
 
 func (p *Position) view(marketPrice float64) PositionView {
-	unrealized := (marketPrice - p.avg) * p.qty
+	unrealized := (marketPrice - p.avg) * float64(p.qty)
 	return PositionView{
 		Symbol:        p.symbol,
 		Qty:           p.qty,
 		Avg:           p.avg,
 		RealizedPnL:   p.realizedPnL,
 		UnrealizedPnL: unrealized,
-		MarketValue:   marketPrice * p.qty,
+		MarketValue:   marketPrice * float64(p.qty),
 	}
 }
 
 type PositionView struct {
 	Symbol        string
-	Qty           float64
+	Qty           int64
 	Avg           float64
 	RealizedPnL   float64
 	UnrealizedPnL float64

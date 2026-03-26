@@ -29,10 +29,10 @@ type CTPAdapter struct {
 
 	// 配置
 	accountID  string
-	investorID thost.TThostFtdcInvestorIDType
-	password   thost.TThostFtdcPasswordType
 	brokerID   thost.TThostFtdcBrokerIDType
 	userID     thost.TThostFtdcUserIDType
+	investorID thost.TThostFtdcInvestorIDType
+	password   thost.TThostFtdcPasswordType
 	frontAddr  string // 交易前置地址
 	symbol     string // 默认合约（可动态）
 }
@@ -111,7 +111,7 @@ func (a *CTPAdapter) SubmitOrder(ctx context.Context, ord *order.Order) (string,
 		return "", fmt.Errorf("CTP 下单失败，code: %d", errCode)
 	}
 
-	a.events <- execution.Event{Type: execution.OrderSubmitted, OrderID: ord.ID(), Timestamp: time.Now()}
+	a.events <- execution.Event{Type: execution.EventOrderSubmitted, OrderID: ord.ID(), Timestamp: time.Now()}
 	return ord.ID(), nil
 }
 

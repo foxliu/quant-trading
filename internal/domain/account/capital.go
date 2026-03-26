@@ -11,7 +11,7 @@ func newCapital(initial float64) *Capital {
 }
 
 func (c *Capital) applyFill(fill Fill) error {
-	value := fill.Price * fill.Qty
+	value := fill.Price * float64(fill.Qty)
 
 	if fill.Side == Buy {
 		return c.deduct(value + fill.Fee)

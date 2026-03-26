@@ -35,13 +35,13 @@ type Order struct {
 	symbol     string
 	side       Side
 	orderType  OrderType
-	qty        float64
+	qty        int64
 	price      float64
 	status     Status
 	createdAt  time.Time
 }
 
-func NewOrder(id, strategyID, accountID, symbol string, side Side, orderType OrderType, price float64, qty float64) *Order {
+func NewOrder(id, strategyID, accountID, symbol string, side Side, orderType OrderType, price float64, qty int64) *Order {
 	return &Order{
 		id:         id,
 		strategyID: strategyID,
@@ -61,7 +61,7 @@ func (o *Order) AccountID() string    { return o.accountID }
 func (o *Order) Symbol() string       { return o.symbol }
 func (o *Order) Side() Side           { return o.side }
 func (o *Order) OrderType() OrderType { return o.orderType }
-func (o *Order) Qty() float64         { return o.qty }
+func (o *Order) Qty() int64           { return o.qty }
 func (o *Order) Price() float64       { return o.price }
 func (o *Order) Status() Status       { return o.status }
 func (o *Order) CreateAt() time.Time  { return o.createdAt }

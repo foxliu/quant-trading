@@ -1,12 +1,17 @@
 package runtime
 
 import (
+	"context"
 	"errors"
 	"quant-trading/internal/application/account"
 	"quant-trading/internal/application/event"
 	"quant-trading/internal/domain/market"
 	"quant-trading/internal/domain/strategy"
+	"quant-trading/internal/infrastructure/logger"
+	"sync"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 /*
@@ -26,6 +31,10 @@ type Runtime struct {
 	accountCtx  *account.Context
 	bus         event.Bus
 	eventCh     chan market.Event
+
+	wg     sync.WaitGroup
+	done   chan struct{}
+	logger *zap.Logger
 }
 
 func NewRuntime(s strategy.Strategy, accountCtx *account.Context, bus event.Bus, buffer int) *Runtime {
@@ -37,6 +46,8 @@ func NewRuntime(s strategy.Strategy, accountCtx *account.Context, bus event.Bus,
 		accountCtx:  accountCtx,
 		bus:         bus,
 		eventCh:     make(chan market.Event, buffer),
+		done:        make(chan struct{}),
+		logger:      logger.Logger.With(zap.String("module", "runtime.runtime")),
 	}
 }
 
@@ -54,6 +65,57 @@ func (r *Runtime) Init() error {
 }
 
 /*
+Start
+-----
+
+启动策略运行时（必须调用）。
+
+流程：
+1. 调用策略 OnInit
+2. 启动后台协程消费事件（串行执行 OnMarketEvent）
+3. 支持 context 取消
+*/
+func (r *Runtime) Start(ctx context.Context) error {
+	if r.strategy == nil {
+		return errors.New("runtime: strategy is nil")
+	}
+
+	// 初始化策略
+	if err := r.strategy.OnInit(r.strategyCtx); err != nil {
+		return err
+	}
+	r.wg.Add(1)
+	go r.runEventLook(ctx)
+
+	r.logger.Info("Runtime 已启动", zap.String("strategy", r.strategy.Name()))
+	return nil
+}
+
+// runEventLoop 后台事件消费协程（串行处理）
+func (r *Runtime) runEventLook(ctx context.Context) {
+	defer r.wg.Done()
+
+	for {
+		select {
+		case <-ctx.Done():
+			r.logger.Info("Strategy 外部调用停止", zap.String("strategy", r.strategy.Name()))
+			return
+		case <-r.done:
+			r.logger.Info("Strategy 已停止", zap.String("strategy", r.strategy.Name()))
+			return
+		case evt, ok := <-r.eventCh:
+			if !ok {
+				return
+			}
+			// 串行处理（避免并发问题）
+			if _, err := r.HandleEvent(evt); err != nil {
+				r.logger.Error("Strategy 处理事件失败", zap.Error(err), zap.String("strategy", r.strategy.Name()))
+			}
+		}
+	}
+}
+
+/*
 Stop
 ----
 
@@ -64,7 +126,16 @@ Stop
 - Runtime 停止后不再处理事件
 */
 func (r *Runtime) Stop() error {
-	return r.strategy.OnStop(r.strategyCtx)
+	close(r.done)
+	r.wg.Wait()
+
+	if err := r.strategy.OnStop(r.strategyCtx); err != nil {
+		r.logger.Error("Strategy 停止失败", zap.Error(err), zap.String("strategy", r.strategy.Name()))
+		return err
+	}
+
+	r.logger.Info("Strategy Runtime 已停止", zap.String("strategy", r.strategy.Name()))
+	return nil
 }
 
 /*

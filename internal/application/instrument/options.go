@@ -66,12 +66,12 @@ func (a *OptionsAdapter) ValidateOrder(ord *order.Order) error {
 	}
 
 	// 检查价格是否为正
-	if ord.Price <= 0 {
+	if ord.Price() <= 0 {
 		return errors.New("order price must be positive")
 	}
 
 	// 检查数量是否为正
-	if ord.Quantity <= 0 {
+	if ord.Qty() <= 0 {
 		return errors.New("order quantity must be positive")
 	}
 

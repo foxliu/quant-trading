@@ -139,12 +139,10 @@ func (s *Scheduler) GetAllSnapshots() []account.Snapshot {
 
 	snapshots := make([]account.Snapshot, 0, len(s.accounts))
 	for _, ctx := range s.accounts {
-		ctx.mu.Lock()
 		snapshot := account.Snapshot{
-			CapitalSnapshot:   ctx.capital.Snapshot(),
-			PortfolioSnapshot: ctx.portfolio.Snapshot(),
+			Capital:   ctx.capital.Snapshot(),
+			Portfolio: ctx.portfolio.Snapshot(),
 		}
-		ctx.mu.Unlock()
 		snapshots = append(snapshots, snapshot)
 	}
 

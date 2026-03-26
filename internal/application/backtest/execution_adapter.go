@@ -3,7 +3,7 @@ package backtest
 import (
 	"quant-trading/internal/application/account"
 	"quant-trading/internal/application/execution"
-	execution2 "quant-trading/internal/domain/order"
+	"quant-trading/internal/domain/order"
 )
 
 type ExecutionAdapter struct {
@@ -24,11 +24,12 @@ func (e *ExecutionAdapter) SubmitOrder(
 	accountID string,
 	strategyID string,
 	symbol string,
-	side execution2.Side,
+	side order.Side,
+	orderType order.OrderType,
 	qty int64,
 	marketPrice float64,
 ) error {
-	createdOrder := e.orderManager.CreateOrder(accountID, strategyID, symbol, side, qty, marketPrice)
+	createdOrder := e.orderManager.CreateOrder(accountID, strategyID, symbol, side, orderType, qty, marketPrice)
 
 	//fill := e.matchingEngine.Match(createdOrder, marketPrice)
 

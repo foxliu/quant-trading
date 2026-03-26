@@ -19,7 +19,7 @@ func NewOrderManager() *OrderManager {
 
 func (om *OrderManager) CreateOrder(
 	accountID, strategyID, symbol string,
-	side order.Side, orderType order.OrderType, qty float64, price float64,
+	side order.Side, orderType order.OrderType, qty int64, price float64,
 ) *order.Order {
 	om.mu.Lock()
 	defer om.mu.Unlock()
@@ -38,4 +38,9 @@ func (om *OrderManager) MarkFilled(orderID string) {
 	if o, ok := om.orders[orderID]; ok {
 		o.MarkFilled()
 	}
+}
+
+func (om *OrderManager) CancelAll(symbol string) error {
+	panic("implement me")
+	return nil
 }

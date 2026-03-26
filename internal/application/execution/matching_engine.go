@@ -15,7 +15,7 @@ func NewMatchingEngine(feeRate float64) *MatchingEngine {
 
 // Match 回测简化： 全部按当前价格立即成交
 func (m *MatchingEngine) Match(o *order.Order, marketPrice float64) account.Fill {
-	fee := marketPrice * o.Qty() * m.feeRate
+	fee := marketPrice * float64(o.Qty()) * m.feeRate
 
 	return account.Fill{
 		Symbol: o.Symbol(),
