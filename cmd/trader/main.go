@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"os"
 	"quant-trading/internal/application/event"
 	"quant-trading/internal/application/runtime"
+	"quant-trading/internal/infrastructure/config"
 	"quant-trading/internal/infrastructure/logger"
 	"quant-trading/internal/infrastructure/strategy/examples"
 
@@ -20,7 +21,14 @@ import (
 )
 
 func main() {
-	err := logger.InitLogger()
+	configPath := flag.String("config", "config.yaml", "配置文件路径（默认在当前目录的config.yaml）")
+	flag.Parse()
+
+	cfg, err := config.LoadTraderConfig(*configPath)
+	if err != nil {
+		panic(fmt.Sprintf("加载配置文件失败: %v", err))
+	}
+	err = logger.InitLogger(cfg)
 	if err != nil {
 		panic(fmt.Sprintf("日志初始化失败: %v", err))
 	}
@@ -33,22 +41,10 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// 1. 从环境变量读取 CTP 配置（安全）
-	frontAddr := os.Getenv("CTP_FRONT_ADDR")
-	brokerID := os.Getenv("CTP_BROKER_ID")
-	investorID := os.Getenv("CTP_INVESTOR_ID")
-	userID := os.Getenv("CTP_USER_ID")
-	password := os.Getenv("CTP_PASSWORD")
-	accountID := os.Getenv("CTP_ACCOUNT_ID")
-
-	if frontAddr == "" || brokerID == "" || investorID == "" || password == "" {
-		log.Fatal("❌ 请设置 CTP 环境变量: CTP_FRONT_ADDR / CTP_BROKER_ID / CTP_INVESTOR_ID / CTP_PASSWORD")
-	}
-
 	// 2. 创建领域 Account + capital + portfolio（必传参数）
 	log.Info("1. 初始化账户组件...")
-	domainAcc := &dAccount.Account{AccountID: accountID}
-	capEngine := capital.NewMemoryEngine(1000000.0) // 期货保证金示例 100万
+	domainAcc := &dAccount.Account{AccountID: cfg.CTP.AccountID}
+	capEngine := capital.NewMemoryEngine(cfg.Account.InitialCash) // 期货保证金示例 100万
 	portEngine := portfolio.NewMemoryEngine()
 
 	accountCtx := account.NewContext(domainAcc, capEngine, portEngine)
@@ -56,7 +52,14 @@ func main() {
 
 	// 3. 创建 CTP 真实 Broker（替换 PaperBroker）
 	log.Info("2. 创建 CTP 适配器（pseudocodes/go2ctp）...")
-	ctpBroker, err := broker.NewCTPAdapter(frontAddr, brokerID, investorID, userID, password, accountID)
+	ctpBroker, err := broker.NewCTPAdapter(
+		cfg.CTP.FrontAddr,
+		cfg.CTP.BrokerID,
+		cfg.CTP.InvestorID,
+		cfg.CTP.UserID,
+		cfg.CTP.Password,
+		cfg.CTP.AccountID,
+	)
 	if err != nil {
 		log.Fatal("❌ CTP 连接失败: %v", zap.Error(err))
 	}
@@ -83,7 +86,7 @@ func main() {
 
 	// 8. 启动系统
 	log.Info("6. 启动 CTP 实盘交易系统...")
-	if err := executionEngine.Start(ctx); err != nil {
+	if err := scheduler.Start(ctx); err != nil {
 		log.Fatal("启动失败: %v", zap.Error(err))
 	}
 

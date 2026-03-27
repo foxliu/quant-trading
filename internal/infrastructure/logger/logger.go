@@ -2,6 +2,7 @@ package logger
 
 import (
 	"os"
+	"quant-trading/internal/infrastructure/config"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -10,30 +11,7 @@ import (
 
 var Logger *zap.Logger
 
-var cfg = struct {
-	AppLog struct {
-		Filename   string `yaml:"filename"`
-		MaxSize    int    `yaml:"max_size"`
-		MaxAge     int    `yaml:"max_age"`
-		MaxBackups int    `yaml:"max_backups"`
-	} `yaml:"app_log"`
-	Mode string `yaml:"mode"`
-}{
-	AppLog: struct {
-		Filename   string `yaml:"filename"`
-		MaxSize    int    `yaml:"max_size"`
-		MaxAge     int    `yaml:"max_age"`
-		MaxBackups int    `yaml:"max_backups"`
-	}{
-		Filename:   "app.log",
-		MaxSize:    100,
-		MaxAge:     30,
-		MaxBackups: 3,
-	},
-	Mode: "dev",
-}
-
-func InitLogger() error {
+func InitLogger(cfg *config.TraderConfig) error {
 	level := zapcore.InfoLevel
 	//fmt.Printf("config: %+v", cfg)
 	//err := level.Set(cfg.AppLog.Level)
@@ -63,10 +41,10 @@ func InitLogger() error {
 		core = zapcore.NewCore(
 			zapcore.NewJSONEncoder(encoderCfg),
 			zapcore.AddSync(&lumberjack.Logger{
-				Filename:   cfg.AppLog.Filename,
-				MaxSize:    int(cfg.AppLog.MaxSize),
-				MaxAge:     int(cfg.AppLog.MaxAge),
-				MaxBackups: int(cfg.AppLog.MaxBackups),
+				Filename:   cfg.Logging.Filename,
+				MaxSize:    cfg.Logging.MaxSize,
+				MaxAge:     cfg.Logging.MaxAge,
+				MaxBackups: cfg.Logging.MaxBackups,
 			}),
 			level,
 		)

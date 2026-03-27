@@ -52,7 +52,7 @@ func (e *PaperExecution) Submit(ctx context.Context, ord *order.Order) error {
 		Symbol:    ord.Symbol(),
 		Type:      dExecution.EventOrderFilled,
 		Side:      ord.Side(),
-		FilledQty: ord.Qty(),
+		Quantity:  ord.Qty(),
 		Price:     ord.Price(),
 		Timestamp: now.Add(1 * time.Millisecond),
 	})

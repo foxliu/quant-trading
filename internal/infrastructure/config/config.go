@@ -29,14 +29,19 @@ type TraderConfig struct {
 	} `yaml:"strategies"`
 
 	Logging struct {
-		Level string `yaml:"level"`
-		File  string `yaml:"file"`
+		Level      string `yaml:"level"`
+		Filename   string `yaml:"filename"`
+		MaxSize    int    `yaml:"max_size"`
+		MaxAge     int    `yaml:"max_age"`
+		MaxBackups int    `yaml:"max_backups"`
 	} `yaml:"logging"`
+
+	Mode string `yaml:"mode"`
 }
 
 // LoadTraderConfig 加载 trader.yaml（支持环境变量覆盖）
-func LoadTraderConfig() (*TraderConfig, error) {
-	data, err := os.ReadFile("configs/trader.yaml")
+func LoadTraderConfig(filePath string) (*TraderConfig, error) {
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("读取配置文件失败：%v", err)
 	}

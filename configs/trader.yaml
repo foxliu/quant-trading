@@ -22,8 +22,12 @@ strategies:
 
 logging:
   level: "info"             # debug / info / warn / error
-  file: "logs/trader.log"
+  filename: "logs/trader.log"
+  max_size: 1024
+  max_backups: 3
+  max_age: 7
 
+mode: "dev"
 # 未来可扩展
 risk:
   max_drawdown: 0.10
