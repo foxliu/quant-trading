@@ -10,7 +10,7 @@ Snapshot
 
 可以被：
 
-* Risk
+* RiskContext
 
 * Monitor
 

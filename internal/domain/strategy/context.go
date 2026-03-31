@@ -3,6 +3,7 @@ package strategy
 import (
 	"quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/market"
+	"quant-trading/internal/domain/risk"
 	"time"
 )
 
@@ -45,4 +46,9 @@ type Context interface {
 
 	Account() account.Reader
 	SetAccountContext(ctx account.Reader)
+
+	// ======= Risk ========
+
+	RiskContext() risk.Context
+	SetRiskContext(riskCtx risk.Context)
 }

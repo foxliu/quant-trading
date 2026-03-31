@@ -3,6 +3,6 @@ package snapshot
 import "time"
 
 type Snapshot interface {
-	Name() string // Position / Risk / Account ...
+	Name() string // Position / RiskContext / Account ...
 	Timestamp() time.Time
 }

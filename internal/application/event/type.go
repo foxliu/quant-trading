@@ -4,7 +4,7 @@ type Type int
 
 const (
 	EventMarketPrice    Type = iota // 市场行情事件（K线、Tick）
-	EventSignal                     // 策略信号事件（供 Risk / Execution 使用）
+	EventSignal                     // 策略信号事件（供 RiskContext / Execution 使用）
 	EventOrderSubmitted             // 订单提交
 	EventOrderFilled                // 订单成交
 	EventOrderCanceled              // 订单撤单

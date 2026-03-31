@@ -10,7 +10,7 @@ Engine
 ======
 
 Execution Engine 的职责：
-- 接收 Risk Engine 校验通过的 Order
+- 接收 RiskContext Engine 校验通过的 Order
 - 将 Order 提交到真实 / 模拟 执行系统
 - 不做任何业务判断
 - 不阻塞上游业务流程

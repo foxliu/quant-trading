@@ -1,35 +1,51 @@
 package rules
 
 import (
-	"quant-trading/internal/application/risk"
-	risk2 "quant-trading/internal/domain/risk"
-	"quant-trading/pkg/utils"
-	"time"
+	"fmt"
+	"quant-trading/internal/domain/order"
+	"quant-trading/internal/domain/risk"
 )
 
 /*
 最大仓位限制
 */
 
-type MaxPosition struct {
-	MaxQty int64
+type MaxPositionRule struct {
+	maxLong  int64
+	maxShort int64
+	maxTotal int64
 }
 
-func (r *MaxPosition) Name() string {
-	return "MaxPosition"
+func NewMaxPositionRule(maxTotal int64) risk.Rule {
+	return &MaxPositionRule{
+		maxLong:  0,
+		maxShort: 0,
+		maxTotal: maxTotal,
+	}
 }
 
-func (r *MaxPosition) Evaluate(ctx *risk.Context) *risk.Result {
-	ctx.Mu.Lock()
-	defer ctx.Mu.Unlock()
+func (r *MaxPositionRule) Name() string {
+	return "MaxPositionRule"
+}
 
-	if ctx.Position.Pos != nil && utils.Abs(ctx.Position.Pos.Qty) > r.MaxQty {
-		return &risk.Result{
-			RuleName: r.Name(),
-			Action:   risk2.ActionRejectOrder,
-			Reason:   "position size exceeds limit",
-			Time:     time.Now(),
+func (r *MaxPositionRule) Type() risk.RuleType {
+	return risk.RuleMaxPosition
+}
+
+func (r *MaxPositionRule) CheckOrder(ord *order.Order) risk.CheckResult {
+	// 当前权做笔下单检查（持仓检查在 CheckPosition 中实现）
+	if ord.Qty() > r.maxTotal {
+		return risk.CheckResult{
+			Action:   risk.ActionBlock,
+			RuleType: r.Type(),
+			Message:  fmt.Sprintf("单笔下单数量 %d 超过最大持仓限制 %d", ord.Qty(), r.maxTotal),
+			Level:    2,
 		}
 	}
-	return nil
+	return risk.CheckResult{Action: risk.ActionAllow}
+}
+
+func (r *MaxPositionRule) CheckPosition() risk.CheckResult {
+	// 持仓检查逻辑由 Engine 统一调用，此处可扩展
+	return risk.CheckResult{Action: risk.ActionAllow}
 }

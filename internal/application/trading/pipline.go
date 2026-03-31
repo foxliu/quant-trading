@@ -20,8 +20,8 @@ type Pipeline struct {
 
 	// 内部通道
 	orderCh1 chan order.Order // planner -> Position
-	orderCh2 chan order.Order // Position -> Risk
-	orderCh3 chan order.Order // Risk -> Execution (保留）
+	orderCh2 chan order.Order // Position -> RiskContext
+	orderCh3 chan order.Order // RiskContext -> Execution (保留）
 
 	// 组件
 	planner *risk.Planner
@@ -62,7 +62,7 @@ func NewPipeline(
 }
 
 func (p *Pipeline) Start(ctx context.Context) error {
-	// 启动 Position / Risk (它们自己监听 channel）
+	// 启动 Position / RiskContext (它们自己监听 channel）
 	// _ = p.positionEngine.Start(ctx)
 	if p.riskEngine != nil {
 		_ = p.riskEngine.Start(ctx)

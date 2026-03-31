@@ -3,12 +3,13 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"quant-trading/internal/application/risk"
 	"sync"
 
 	"quant-trading/internal/application/account"
 	"quant-trading/internal/application/event"
 	aExecution "quant-trading/internal/application/execution"
-	"quant-trading/internal/domain/execution"
+	dRisk "quant-trading/internal/domain/risk"
 	"quant-trading/internal/domain/strategy"
 	"quant-trading/internal/infrastructure/logger"
 
@@ -20,34 +21,18 @@ type Scheduler struct {
 	mu         sync.RWMutex
 	runtimes   map[string]*Runtime
 	accountCtx *account.Context
+	riskEngine *risk.Engine
 	bus        event.Bus
 	engine     aExecution.Engine
 	logger     *zap.Logger
 }
 
-// fillListener（成交监听器，保持不变）
-type fillListener struct {
-	accountCtx *account.Context
-	logger     *zap.Logger
-}
-
-func (l *fillListener) OnExecutionEvent(ctx context.Context, evt *execution.Event) {
-	if evt.Type != execution.EventOrderFilled {
-		return
-	}
-	l.accountCtx.ApplyFill(evt.Symbol, evt.Side, evt.Price, evt.Quantity)
-	l.logger.Info("成交已应用到账户",
-		zap.String("orderID", evt.OrderID),
-		zap.String("symbol", evt.Symbol),
-		zap.Int64("qty", evt.Quantity),
-	)
-}
-
 // NewScheduler 创建多策略调度器
-func NewScheduler(accCtx *account.Context, bus event.Bus, engine aExecution.Engine) *Scheduler {
+func NewScheduler(accCtx *account.Context, riskEngine *risk.Engine, bus event.Bus, engine aExecution.Engine) *Scheduler {
 	s := &Scheduler{
 		runtimes:   make(map[string]*Runtime),
 		accountCtx: accCtx,
+		riskEngine: riskEngine,
 		bus:        bus,
 		engine:     engine,
 		logger:     logger.Logger.With(zap.String("module", "runtime.scheduler")),
@@ -72,6 +57,12 @@ func (s *Scheduler) RegisterStrategy(stg strategy.Strategy) error {
 	}
 
 	rt := NewRuntime(stg, s.accountCtx, s.bus, 1024)
+
+	// 注入 riskContext
+	riskCtx := dRisk.NewContext(s.riskEngine)
+	stgCtx := rt.GetStrategyContext()
+	stgCtx.SetRiskContext(*riskCtx)
+
 	s.runtimes[stg.Name()] = rt
 
 	// 为该 Runtime 注册市场事件 Handler（使用现有 Bus 接口）
@@ -103,7 +94,8 @@ func (s *Scheduler) Stop() {
 	defer s.mu.Unlock()
 
 	for name, rt := range s.runtimes {
-		rt.Stop()
+		_ = rt.Stop()
+
 		s.logger.Info("策略已停止", zap.String("strategy", name))
 	}
 	s.logger.Info("多策略调度器已停止")

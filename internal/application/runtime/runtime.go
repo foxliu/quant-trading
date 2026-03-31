@@ -171,7 +171,7 @@ func (r *Runtime) HandleEvent(evt market.Event) ([]strategy.Signal, error) {
 		return nil, err
 	}
 
-	// 通过 EventBus 发布 Signal （供 Risk Engine 消费）
+	// 通过 EventBus 发布 Signal （供 RiskContext Engine 消费）
 	for _, sig := range signals {
 		r.bus.Publish(&event.Envelope{
 			Type:      event.EventSignal,
@@ -191,4 +191,8 @@ EventChan
 */
 func (r *Runtime) EventChan() <-chan market.Event {
 	return r.eventCh
+}
+
+func (r *Runtime) GetStrategyContext() strategy.Context {
+	return r.strategyCtx
 }

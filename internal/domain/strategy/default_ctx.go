@@ -3,6 +3,7 @@ package strategy
 import (
 	"quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/market"
+	"quant-trading/internal/domain/risk"
 	"sync"
 	"time"
 )
@@ -26,6 +27,7 @@ type DefaultContext struct {
 	state  map[string]interface{}
 
 	accountCtx account.Reader
+	riskCtx    risk.Context
 
 	mu sync.RWMutex
 }
@@ -123,4 +125,16 @@ func (c *DefaultContext) SetAccountContext(ctx account.Reader) {
 
 func (c *DefaultContext) Account() account.Reader {
 	return c.accountCtx
+}
+
+// ======= RiskContext ========
+
+func (c *DefaultContext) RiskContext() risk.Context {
+	return c.riskCtx
+}
+
+func (c *DefaultContext) SetRiskContext(riskCtx risk.Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.riskCtx = riskCtx
 }

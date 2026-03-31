@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Breach 表示一次风险违规触发（由 Risk Rule Engine 产生）
+// Breach 表示一次风险违规触发（由 RiskContext Rule Engine 产生）
 type Breach struct {
 	// 基础标识
 	ID       string `json:"id"`       // 全局唯一 ID（推荐 UUID 或 seq）

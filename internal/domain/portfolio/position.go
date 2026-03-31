@@ -10,7 +10,7 @@ import (
 // 股票多头
 // 期货多 / 空
 // 期权多 / 空
-// 不做盈亏计算（那是 Risk 层）
+// 不做盈亏计算（那是 RiskContext 层）
 type Position struct {
 	Instrument instrument.Instrument
 

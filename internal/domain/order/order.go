@@ -19,7 +19,7 @@ Order
 Order 表示一笔【可执行的标准化交易意图】。
 
 约定：
-- Order 是 Risk Engine 的最终产物
+- Order 是 RiskContext Engine 的最终产物
 - Execution Engine 必须能够直接消费 Order
 - Order 不表达策略意图（IntentLong / IntentShort）
 - 只表达交易动作（Buy / Sell）
