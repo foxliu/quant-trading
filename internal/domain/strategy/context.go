@@ -49,6 +49,6 @@ type Context interface {
 
 	// ======= Risk ========
 
-	RiskContext() risk.Context
-	SetRiskContext(riskCtx risk.Context)
+	RiskContext() *risk.Context
+	SetRiskContext(riskCtx *risk.Context)
 }

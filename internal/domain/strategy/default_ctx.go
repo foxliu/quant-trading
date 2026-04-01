@@ -27,7 +27,7 @@ type DefaultContext struct {
 	state  map[string]interface{}
 
 	accountCtx account.Reader
-	riskCtx    risk.Context
+	riskCtx    *risk.Context
 
 	mu sync.RWMutex
 }
@@ -129,11 +129,11 @@ func (c *DefaultContext) Account() account.Reader {
 
 // ======= RiskContext ========
 
-func (c *DefaultContext) RiskContext() risk.Context {
+func (c *DefaultContext) RiskContext() *risk.Context {
 	return c.riskCtx
 }
 
-func (c *DefaultContext) SetRiskContext(riskCtx risk.Context) {
+func (c *DefaultContext) SetRiskContext(riskCtx *risk.Context) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.riskCtx = riskCtx

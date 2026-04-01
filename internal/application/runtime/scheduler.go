@@ -60,8 +60,9 @@ func (s *Scheduler) RegisterStrategy(stg strategy.Strategy) error {
 
 	// 注入 riskContext
 	riskCtx := dRisk.NewContext(s.riskEngine)
-	stgCtx := rt.GetStrategyContext()
-	stgCtx.SetRiskContext(*riskCtx)
+	if ctx, ok := rt.strategyCtx.(interface{ SetRiskContext(*dRisk.Context) }); ok {
+		ctx.SetRiskContext(riskCtx)
+	}
 
 	s.runtimes[stg.Name()] = rt
 
