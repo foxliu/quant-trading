@@ -14,6 +14,7 @@ import (
 	"quant-trading/internal/domain/account"
 	"quant-trading/internal/infrastructure/broker"
 	"quant-trading/internal/infrastructure/config"
+	"quant-trading/internal/infrastructure/db"
 	"quant-trading/internal/infrastructure/logger"
 	"quant-trading/internal/infrastructure/strategy/examples"
 
@@ -43,9 +44,14 @@ func main() {
 		log.Fatal("配置加载失败", zap.Error(err))
 	}
 
+	db.InitSQLite(cfg.DB.DSN)
+
+	// 2. 创建事件总线
+	bus := event.NewMemoryBus()
+
 	// 2. 创建账户组件
 	fmt.Println("2. 初始化账户组件...")
-	domainAcc := &account.Account{AccountID: cfg.CTP.AccountID}
+	domainAcc := &account.Account{AccountID: cfg.Account.Name}
 	capEngine := capital.NewMemoryEngine(cfg.Account.InitialCash)
 	portEngine := portfolio.NewMemoryEngine()
 
@@ -63,6 +69,8 @@ func main() {
 		cfg.CTP.InvestorID,
 		cfg.CTP.Password,
 		cfg.CTP.AccountID,
+		accountCtx,
+		portEngine,
 	)
 	if err != nil {
 		log.Fatal("CTP 连接失败", zap.Error(err))
@@ -78,9 +86,6 @@ func main() {
 	fmt.Println("5. 创建 RiskEngine...")
 	riskEngine := risk.NewEngine()
 	log.Info("风控引擎已初始化")
-
-	// 6. 创建事件总线
-	bus := event.NewMemoryBus()
 
 	// 7. 创建多策略调度器（注入 RiskEngine）
 	fmt.Println("6. 创建 Scheduler...")

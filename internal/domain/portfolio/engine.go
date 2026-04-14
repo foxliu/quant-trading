@@ -13,4 +13,8 @@ type Engine interface {
 
 	Snapshot() Snapshot
 	Restore(Snapshot)
+	GetPositions() ([]Position, error)
+	GetPosition(symbol string) (Position, bool)
+	GetDailyRealizedPnL() float64
+	GetMaxDrawdown() float64
 }

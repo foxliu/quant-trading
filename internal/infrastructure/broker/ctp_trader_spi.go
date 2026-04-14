@@ -1,10 +1,8 @@
 package broker
 
 import (
-	"fmt"
+	"quant-trading/internal/application/event"
 	"quant-trading/internal/domain/execution"
-	"quant-trading/internal/domain/instrument"
-	"quant-trading/internal/domain/trade"
 	"quant-trading/internal/infrastructure/logger"
 	"time"
 
@@ -25,11 +23,12 @@ func (s *ctpTraderSpi) OnRsqUserLogin(
 	reqID int,
 	isLast bool,
 ) {
-	if info.ErrorID == 0 {
-		fmt.Println("CTP 登录成功")
-	} else {
-		fmt.Printf("CTP 登录失败: %s\n", thost.BytesToString(info.ErrorMsg[:]))
+	if info.ErrorID != 0 {
+		log.Error("CTP 登录失败", zap.String("ErrorMsg", thost.BytesToString(info.ErrorMsg[:])))
+		return
 	}
+	tradingDay := thost.BytesToString(req.TradingDay[:])
+	s.adapter.SetTradingDay(tradingDay)
 }
 
 func (s *ctpTraderSpi) OnFrontConnected() {
@@ -211,25 +210,30 @@ func (s *ctpTraderSpi) OnRspQryInvestorPosition(pInvestorPosition *thost.CThostF
 		log.Error("CTP 获取持仓失败: %d %s\n", zap.Int32("ErrorID", int32(pRspInfo.ErrorID)), zap.ByteString("ErrorMsg", pRspInfo.ErrorMsg[:]))
 		return
 	}
-	symbol := pInvestorPosition.InstrumentID.String()
-	s.adapter.mu.Lock()
-	s.adapter.positions[symbol] = trade.Position{
-		Instrument: instrument.Instrument{Symbol: symbol},
-		Symbol:     symbol,
-		Qty:        int64(pInvestorPosition.Position),
-	}
-	s.adapter.mu.Lock()
+	//symbol := pInvestorPosition.InstrumentID.String()
+	//s.adapter.mu.Lock()
+	//s.adapter.positions[symbol] = trade.Position{
+	//	Instrument: instrument.Instrument{Symbol: symbol},
+	//	Symbol:     symbol,
+	//	Qty:        int64(pInvestorPosition.Position),
+	//}
+	//s.adapter.mu.Lock()
 }
 
 func (s *ctpTraderSpi) OnRspQryTradingAccount(pTradingAccount *thost.CThostFtdcTradingAccountField, pRspInfo *thost.CThostFtdcRspInfoField, nRequestID int, bIsLast bool) {
-	if pRspInfo.ErrorID != 0 || pTradingAccount == nil {
+	if pRspInfo != nil && pRspInfo.ErrorID != 0 {
 		log.Error("CTP 获取账户失败: %d %s\n", zap.Int32("ErrorID", int32(pRspInfo.ErrorID)), zap.ByteString("ErrorMsg", pRspInfo.ErrorMsg[:]))
 		return
 	}
-	s.adapter.mu.Lock()
-	s.adapter.balance = float64(pTradingAccount.Available)
-	s.adapter.equity = float64(pTradingAccount.Balance)
-	s.adapter.mu.Unlock()
+	log.Info("CTP 获取账户成功", zap.Any("Account", pTradingAccount))
+
+	evtLoop := &event.Envelope{
+		Payload:   pTradingAccount,
+		Source:    "CTP",
+		Type:      event.EventCTPTradingAccountRtn,
+		Timestamp: time.Now(),
+	}
+	s.adapter.eventBus.Publish(evtLoop)
 }
 
 func (s *ctpTraderSpi) OnRspQryInvestor(pInvestor *thost.CThostFtdcInvestorField, pRspInfo *thost.CThostFtdcRspInfoField, nRequestID int, bIsLast bool) {
@@ -447,30 +451,12 @@ func (s *ctpTraderSpi) OnRspError(pRspInfo *thost.CThostFtdcRspInfoField, nReque
 }
 
 func (s *ctpTraderSpi) OnRtnOrder(pOrder *thost.CThostFtdcOrderField) {
-	orderRef := pOrder.OrderRef.String()
-	s.adapter.mu.Lock()
-	if ord, ok := s.adapter.orderMap[orderRef]; ok {
-		switch pOrder.OrderStatus {
-		case thost.THOST_FTDC_OST_AllTraded, thost.THOST_FTDC_OST_PartTradedNotQueueing:
-			ord.MarkFilled()
-			s.adapter.events <- execution.Event{
-				OrderID:   orderRef,
-				Symbol:    ord.Symbol(),
-				Type:      execution.EventOrderFilled,
-				Side:      ord.Side(),
-				FilledQty: int64(float64(pOrder.VolumeTraded)),
-				Price:     float64(pOrder.LimitPrice),
-				Timestamp: time.Now(),
-			}
-		case thost.THOST_FTDC_OST_Canceled:
-			s.adapter.events <- execution.Event{
-				Type:      execution.EventOrderCanceled,
-				OrderID:   orderRef,
-				Timestamp: time.Now(),
-			}
-		}
-	}
-	s.adapter.mu.Unlock()
+	s.adapter.eventBus.Publish(&event.Envelope{
+		Type:      event.EventCTPOrderRtn,
+		Source:    "CTP",
+		Timestamp: time.Now(),
+		Payload:   pOrder,
+	})
 }
 
 func (s *ctpTraderSpi) OnRtnTrade(pTrade *thost.CThostFtdcTradeField) {
@@ -480,13 +466,13 @@ func (s *ctpTraderSpi) OnRtnTrade(pTrade *thost.CThostFtdcTradeField) {
 	)
 
 	// 推送成交事件
-	s.adapter.events <- execution.Event{
-		Type:      execution.EventOrderFilled,
-		OrderID:   string(pTrade.OrderRef[:]),
-		Price:     float64(pTrade.Price),
-		FilledQty: int64(pTrade.Volume),
-		Timestamp: time.Now(),
-	}
+	//s.adapter.events <- execution.Event{
+	//	Type:      execution.EventOrderFilled,
+	//	OrderID:   string(pTrade.OrderRef[:]),
+	//	Price:     float64(pTrade.Price),
+	//	FilledQty: int64(pTrade.Volume),
+	//	UpdateTime: time.Now(),
+	//}
 	// 触发 ApplyFill（通过 AccountContext，由 execution engine 处理）
 	// 这里只推送事件，实际 ApplyFill 在 paperEngine 或 dispatcher 中监听事件后调用
 }

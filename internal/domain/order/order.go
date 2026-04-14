@@ -29,16 +29,19 @@ Order 表示一笔【可执行的标准化交易意图】。
 */
 type Order struct {
 	// === 标识 ===
-	id         string
-	strategyID string
-	accountID  string
-	symbol     string
-	side       Side
-	orderType  OrderType
-	qty        int64
-	price      float64
-	status     Status
-	createdAt  time.Time
+	id           string
+	strategyID   string
+	accountID    string
+	symbol       string
+	side         Side
+	orderType    OrderType
+	qty          int64
+	price        float64
+	status       OrderStatus
+	createdAt    time.Time
+	ctpOrdSysID  string
+	ctpFrontID   string
+	ctpSessionID string
 }
 
 func NewOrder(id, strategyID, accountID, symbol string, side Side, orderType OrderType, price float64, qty int64) *Order {
@@ -55,16 +58,23 @@ func NewOrder(id, strategyID, accountID, symbol string, side Side, orderType Ord
 	}
 }
 
-func (o *Order) ID() string           { return o.id }
-func (o *Order) StrategyID() string   { return o.strategyID }
-func (o *Order) AccountID() string    { return o.accountID }
-func (o *Order) Symbol() string       { return o.symbol }
-func (o *Order) Side() Side           { return o.side }
-func (o *Order) OrderType() OrderType { return o.orderType }
-func (o *Order) Qty() int64           { return o.qty }
-func (o *Order) Price() float64       { return o.price }
-func (o *Order) Status() Status       { return o.status }
-func (o *Order) CreateAt() time.Time  { return o.createdAt }
+func (o *Order) ID() string                           { return o.id }
+func (o *Order) StrategyID() string                   { return o.strategyID }
+func (o *Order) AccountID() string                    { return o.accountID }
+func (o *Order) Symbol() string                       { return o.symbol }
+func (o *Order) Side() Side                           { return o.side }
+func (o *Order) OrderType() OrderType                 { return o.orderType }
+func (o *Order) Qty() int64                           { return o.qty }
+func (o *Order) Price() float64                       { return o.price }
+func (o *Order) Status() OrderStatus                  { return o.status }
+func (o *Order) CreateAt() time.Time                  { return o.createdAt }
+func (o *Order) CTPOrderSysID() string                { return o.ctpOrdSysID }
+func (o *Order) CTPFrontID() string                   { return o.ctpFrontID }
+func (o *Order) CTPSessionID() string                 { return o.ctpSessionID }
+func (o *Order) SetCTPOrderStatus(status OrderStatus) { o.status = status }
+func (o *Order) SetCTPOrderSysID(ordSysID string)     { o.ctpOrdSysID = ordSysID }
+func (o *Order) SetCTPFrontID(frontID string)         { o.ctpFrontID = frontID }
+func (o *Order) SetCTPSessionID(sessionID string)     { o.ctpSessionID = sessionID }
 
 func (o *Order) MarkFilled() {
 	o.status = StatusFilled

@@ -2,18 +2,21 @@ package rules
 
 import (
 	"fmt"
+	"quant-trading/internal/application/account"
 	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/risk"
 )
 
 // SingleOrderLimitRule 单笔订单最大数量限制
 type SingleOrderLimitRule struct {
-	maxQty int64
+	maxQty     int64
+	accountCtx *account.Context
 }
 
-func NewSingleOrderLimitRule(maxQty int64) risk.Rule {
+func NewSingleOrderLimitRule(maxQty int64, accountCtx *account.Context) risk.Rule {
 	return &SingleOrderLimitRule{
-		maxQty: maxQty,
+		maxQty:     maxQty,
+		accountCtx: accountCtx,
 	}
 }
 

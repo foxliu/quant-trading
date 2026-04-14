@@ -3,9 +3,11 @@ package broker
 import (
 	"context"
 	"fmt"
+	"quant-trading/internal/application/account"
+	"quant-trading/internal/application/event"
 	"quant-trading/internal/domain/execution"
 	"quant-trading/internal/domain/order"
-	"quant-trading/internal/domain/trade"
+	"quant-trading/internal/domain/portfolio"
 	"sync"
 	"time"
 
@@ -15,31 +17,40 @@ import (
 
 // CTPAdapter 上期CTP真实适配器（实现 Broker 接口）
 type CTPAdapter struct {
-	mu        sync.RWMutex
-	traderApi thost.TraderApi
-	events    chan execution.Event
-
-	// 缓存（供GetPositions / GetBalance使用）
-	positions map[string]trade.Position // symbol -> Position
-	balance   float64
-	equity    float64
-
-	// 订单映射（CTP OrderRef -> 本地 Order）
-	orderMap map[string]*order.Order
-
+	mu         sync.RWMutex
+	traderApi  thost.TraderApi
+	events     chan execution.Event
+	eventBus   event.Bus
+	accountCtx *account.Context
+	portfolio  portfolio.Engine
 	// 配置
-	accountID  string
-	brokerID   thost.TThostFtdcBrokerIDType
-	userID     thost.TThostFtdcUserIDType
+	accountID string
+	brokerID  thost.TThostFtdcBrokerIDType // 经纪商代码
+	userID    thost.TThostFtdcUserIDType   // 用户登录名
+	// 投资者代码, 就是在期货公司开立的资金账号（交易账号），是资金结算和持仓归属的唯一标识
 	investorID thost.TThostFtdcInvestorIDType
 	password   thost.TThostFtdcPasswordType
-	frontAddr  string // 交易前置地址
+	// frontAddr 交易前置地址， 期货公司提供的 CTP 服务器网络地址， CTP 分为行情前置（MdFront）和交易前置（TdFront），
+	// 两者地址不同。登录时需要分别连接对应的地址。
+	frontAddr  string
 	symbol     string // 默认合约（可动态）
+	tradingDay string
+
+	// 穿透式监管
+	appID    thost.TThostFtdcAppIDType    // 客户端应用标识
+	authCode thost.TThostFtdcAuthCodeType // 授权码/认证码
+
+	pending  map[CTPReqID]*PendingRequest
+	reqIDGen CTPReqID
 }
 
 // NewCTPAdapter 创建CTP适配器
 // frontAddr 示例："tcp://180.168.146.187:10000" （测试环境）或券商生产地址
-func NewCTPAdapter(frontAddr, brokerID, investorID, userID, password, accountID string) (*CTPAdapter, error) {
+func NewCTPAdapter(
+	frontAddr, brokerID, investorID, userID, password, accountID string,
+	accountCtx *account.Context,
+	portfolio portfolio.Engine,
+) (*CTPAdapter, error) {
 	var inID thost.TThostFtdcInvestorIDType
 	copy(inID[:], investorID)
 
@@ -53,10 +64,9 @@ func NewCTPAdapter(frontAddr, brokerID, investorID, userID, password, accountID 
 	copy(uID[:], userID)
 
 	a := &CTPAdapter{
-		events:    make(chan execution.Event, 200),
-		positions: make(map[string]trade.Position),
-		orderMap:  make(map[string]*order.Order),
-
+		events:     make(chan execution.Event, 200),
+		accountCtx: accountCtx,
+		portfolio:  portfolio,
 		accountID:  accountID,
 		investorID: inID,
 		userID:     uID,
@@ -86,7 +96,6 @@ func NewCTPAdapter(frontAddr, brokerID, investorID, userID, password, accountID 
 // SubmitOrder 实现Broker 适配器接口
 func (a *CTPAdapter) SubmitOrder(ctx context.Context, ord *order.Order) (string, error) {
 	a.mu.Lock()
-	a.orderMap[ord.ID()] = ord
 	a.mu.Unlock()
 
 	var instrumentID thost.TThostFtdcInstrumentIDType
@@ -116,10 +125,10 @@ func (a *CTPAdapter) SubmitOrder(ctx context.Context, ord *order.Order) (string,
 }
 
 // CancelOrder 实现Broker 适配器接口
-func (a *CTPAdapter) CancelOrder(ctx context.Context, orderID string) error {
+func (a *CTPAdapter) CancelOrder(ctx context.Context, ord *order.Order) error {
 	// 简化实现（实际需保存 OrderRef + FrontID + SessionID）
 	var oRef thost.TThostFtdcOrderRefType
-	copy(oRef[:], orderID)
+	copy(oRef[:], ord.ID())
 	req := thost.CThostFtdcInputOrderActionField{
 		BrokerID:   a.brokerID,
 		InvestorID: a.investorID,
@@ -133,26 +142,100 @@ func (a *CTPAdapter) CancelOrder(ctx context.Context, orderID string) error {
 	return nil
 }
 
-// GetPositions / GetBalance（通过 ReqQryInvestorPosition / ReqQryTradingAccount 实现，回调处理）
-func (a *CTPAdapter) GetPositions(ctx context.Context) ([]trade.Position, error) {
+func (a *CTPAdapter) QueryOrderStatus(ctx context.Context, ord *order.Order) (*order.Order, error) {
+	var oRef thost.TThostFtdcOrderSysIDType
+	copy(oRef[:], ord.ID())
+	req := thost.CThostFtdcQryOrderField{
+		BrokerID:   a.brokerID,
+		InvestorID: a.investorID,
+		OrderSysID: oRef,
+	}
+}
+
+// GetPositions / QueryAccount（通过 ReqQryInvestorPosition / ReqQryTradingAccount 实现，回调处理）
+func (a *CTPAdapter) GetPositions(ctx context.Context) ([]portfolio.Position, error) {
 	// 实际通过回调 OnRspQryInvestorPosition 填充，简化返回空（生产需缓存）
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	pos := make([]trade.Position, 0, len(a.positions))
-	for _, p := range a.positions {
+	positions, _ := a.accountCtx.GetPositions()
+	pos := make([]portfolio.Position, 0, len(positions))
+	for _, p := range positions {
 		pos = append(pos, p)
 	}
 	return pos, nil
 }
-func (a *CTPAdapter) GetBalance(ctx context.Context) (cash float64, equity float64, err error) {
+func (a *CTPAdapter) QueryAccount(ctx context.Context) (*thost.CThostFtdcTradingAccountField, error) {
+	reqID := a.nextReqID()
+	pr := &PendingRequest{
+		ch: make(chan *execution.AccountEvent, 1),
+	}
 	// 通过回调 OnRspQryTradingAccount 返回
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.balance, a.equity, nil
+	a.mu.Lock()
+	a.pending[reqID] = pr
+	a.mu.Unlock()
+	req := &thost.CThostFtdcQryTradingAccountField{
+		BrokerID:   a.brokerID,
+		InvestorID: a.investorID,
+	}
+	errCode := a.traderApi.ReqQryTradingAccount(req, reqID.Value())
+	if errCode != 0 {
+		return nil, fmt.Errorf("CTP 查询账户失败，code: %d", errCode)
+	}
+	// 等待完成事件
+	select {
+	case evt := <-pr.ch:
+		a.cleanupPending(reqID)
+		return evt.Data, evt.Err
+	case <-ctx.Done():
+		a.cleanupPending(reqID)
+		return nil, ctx.Err()
+	}
+}
+
+func (a *CTPAdapter) cleanupPending(reqID CTPReqID) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	delete(a.pending, reqID)
 }
 
 func (a *CTPAdapter) SubscribeEvents(ctx context.Context) <-chan execution.Event {
 	return a.events
+}
+
+func (a *CTPAdapter) SetTradingDay(tradingDay string) {
+	a.mu.Lock()
+	a.tradingDay = tradingDay
+	a.mu.Unlock()
+}
+
+func (a *CTPAdapter) StartEventLoop() {
+	a.eventBus.Subscribe(event.EventCTPOrderRtn, a.handleAccountQueryEvent)
+}
+
+func (a *CTPAdapter) nextReqID() CTPReqID {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.reqIDGen++
+	return a.reqIDGen
+}
+
+func (a *CTPAdapter) handleAccountQueryEvent(e *event.Envelope) {
+	switch e.Type {
+	case event.EventCTPOrderRtn:
+		if evt, ok := e.Payload.(*execution.AccountEvent); ok {
+			a.mu.Lock()
+			reqID := CTPReqID(evt.ReqID)
+			pr, ok := a.pending[reqID]
+			if !ok {
+				return
+			}
+			if evt.IsLast {
+				pr.ch <- evt
+			}
+		}
+	default:
+		return
+	}
 }
 
 func convertDirection(side order.Side) thost.TThostFtdcDirectionType {

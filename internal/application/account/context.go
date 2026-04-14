@@ -1,6 +1,7 @@
 package account
 
 import (
+	"errors"
 	"quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/capital"
 	"quant-trading/internal/domain/order"
@@ -73,12 +74,9 @@ Snapshot
 */
 func (c *Context) Snapshot() account.Snapshot {
 	return account.Snapshot{
-		AccountID:   c.acc.AccountID,
-		Balance:     c.balance.Snapshot(),
-		Capital:     c.capital.Snapshot(),
-		Portfolio:   c.portfolio.Snapshot(),
-		RealizedPnL: c.realizedPnL,
-		Timestamp:   time.Now(),
+		AccountID:  c.acc.AccountID,
+		Balance:    c.balance.Snapshot(),
+		UpdateTime: time.Now(),
 	}
 }
 
@@ -99,4 +97,28 @@ func (c *Context) Restore(s account.Snapshot) {
 
 func (c *Context) ApplyFill(symbol string, side order.Side, price float64, qty int64) {
 	c.portfolio.UpdateFill(symbol, side, price, qty)
+}
+
+// GetPositions 返回所有持仓
+func (c *Context) GetPositions() ([]portfolio.Position, error) {
+	return c.portfolio.GetPositions()
+}
+
+// GetPosition 返回单个品种持仓
+func (c *Context) GetPosition(symbol string) (portfolio.Position, error) {
+	pos, ok := c.portfolio.GetPosition(symbol)
+	if !ok {
+		return portfolio.Position{}, errors.New("无此持仓")
+	}
+	return pos, nil
+}
+
+// GetMaxDrawdown 获取最大回撤比例（0.0 ~ 1.0）
+func (c *Context) GetMaxDrawdown() float64 {
+	return c.portfolio.GetMaxDrawdown()
+}
+
+// GetDailyRealizedPnL 获取当日已实现盈亏
+func (c *Context) GetDailyRealizedPnL() float64 {
+	return c.portfolio.GetDailyRealizedPnL()
 }

@@ -1,6 +1,7 @@
 package portfolio
 
 import (
+	"quant-trading/internal/domain/instrument"
 	"quant-trading/internal/domain/order"
 	"quant-trading/pkg/utils"
 	"sync"
@@ -8,7 +9,7 @@ import (
 
 type position struct {
 	symbol    string
-	quantity  float64
+	quantity  int64
 	avgPrice  float64
 	lastPrice float64
 }
@@ -36,9 +37,9 @@ func (p *SimplePortfolio) UpdateFill(symbol string, side order.Side, price float
 		p.positions[symbol] = pos
 	}
 
-	signedQty := float64(qty)
+	signedQty := qty
 	if side == order.Sell {
-		signedQty = -float64(qty)
+		signedQty = -qty
 	}
 
 	newQty := pos.quantity + signedQty
@@ -46,11 +47,11 @@ func (p *SimplePortfolio) UpdateFill(symbol string, side order.Side, price float
 	if pos.quantity == 0 {
 		pos.avgPrice = price
 	} else if (pos.quantity > 0 && signedQty > 0) || (pos.quantity < 0 && signedQty < 0) {
-		totalCost := pos.quantity*pos.avgPrice + signedQty*price
-		pos.avgPrice = totalCost / newQty
+		totalCost := float64(pos.quantity)*pos.avgPrice + float64(signedQty)*price
+		pos.avgPrice = totalCost / float64(newQty)
 	} else {
 		closeQty := min(utils.Abs(pos.quantity), utils.Abs(signedQty))
-		p.realized += closeQty * (price - pos.avgPrice) * utils.Sign(pos.quantity)
+		p.realized += float64(closeQty) * (price - pos.avgPrice) * utils.Sign(pos.quantity)
 	}
 	pos.quantity = newQty
 }
@@ -70,7 +71,7 @@ func (p *SimplePortfolio) UnrealizedPnL() float64 {
 
 	total := 0.0
 	for _, pos := range p.positions {
-		total += pos.quantity * (pos.lastPrice - pos.avgPrice)
+		total += float64(pos.quantity) * (pos.lastPrice - pos.avgPrice)
 	}
 	return total
 }
@@ -115,4 +116,29 @@ func (p *SimplePortfolio) Restore(s Snapshot) {
 		}
 	}
 	p.realized = s.Realized
+}
+
+func (p *SimplePortfolio) GetPositions() ([]Position, error) {
+	positions := make([]Position, 0)
+	for symbol, pos := range p.positions {
+		positions = append(positions, Position{
+			Instrument: instrument.Instrument{
+				Symbol: symbol,
+			},
+			Quantity:  pos.quantity,
+			LastPrice: pos.lastPrice,
+		})
+	}
+	return positions, nil
+}
+
+func (p *SimplePortfolio) GetPosition(symbol string) (Position, error) {
+	pos := p.positions[symbol]
+	return Position{
+		Instrument: instrument.Instrument{
+			Symbol: symbol,
+		},
+		Quantity:  pos.quantity,
+		LastPrice: pos.lastPrice,
+	}, nil
 }

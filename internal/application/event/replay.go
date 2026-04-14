@@ -25,7 +25,7 @@ func (r *ReplayEngine) ReplayFromSnapshot(sn snapshot.Snapshot, events []*Envelo
 
 	for _, evt := range events {
 		// TODO: 实现时间戳比较
-		// if evt.Timestamp.After(sn.Timestamp()) {
+		// if evt.UpdateTime.After(sn.UpdateTime()) {
 		r.bus.Publish(evt)
 		// }
 	}

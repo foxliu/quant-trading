@@ -3,6 +3,8 @@ package execution
 import (
 	"quant-trading/internal/domain/order"
 	"time"
+
+	"github.com/pseudocodes/go2ctp/thost"
 )
 
 /*
@@ -34,4 +36,11 @@ type SubmitOrderEvent struct {
 	Side       order.Side
 	Quantity   float64
 	Price      float64
+}
+
+type AccountEvent struct {
+	ReqID  int
+	Data   *thost.CThostFtdcTradingAccountField
+	IsLast bool
+	Err    error
 }

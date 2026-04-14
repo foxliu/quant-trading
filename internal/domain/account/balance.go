@@ -7,8 +7,10 @@ Balance
 Balance 描述账户的资金状态
 */
 type Balance struct {
-	available float64
-	frozen    float64
+	preBalance float64
+	available  float64
+	commission float64
+	frozen     float64
 }
 
 func NewBalance(initial float64) *Balance {
@@ -44,7 +46,6 @@ func (b *Balance) Add(amount float64) {
 func (b *Balance) Snapshot() BalanceSnapshot {
 	return BalanceSnapshot{
 		Available: b.available,
-		Frozen:    b.frozen,
 	}
 }
 
