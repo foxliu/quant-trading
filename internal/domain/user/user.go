@@ -1,15 +1,26 @@
-package user_model
+package user
 
 import (
+	"quant-trading/internal/domain/common"
+	"quant-trading/internal/infrastructure/logger"
+
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
+type UserID string
+
+func (u UserID) String() string {
+	return string(u)
+}
+
+var log = logger.Logger.With(zap.String("module", "user_model"))
+
 type User struct {
-	Model
+	common.Model
+	ID           UserID         `gorm:"column:user_id;type:varchar(40);uniqueIndex;not null;primaryKey"`
 	BrokerID     string         `gorm:"column:broker_id;not null;comment:证卷公司ID"`
-	UserID       string         `gorm:"column:user_id;uniqueIndex;not null"`
 	InvestorID   string         `gorm:"column:investor_id;not null;comment:投资者代码，交易账号"`
 	AppID        string         `gorm:"column:app_id;not null;comment:穿透式监管客户端应用标识"`
 	AuthCode     string         `gorm:"column:auth_code;not null;comment:穿透式监管授权码/认证码"`
@@ -27,7 +38,7 @@ func (u *User) TableName() string {
 */
 
 type Variety struct {
-	Model
+	common.Model
 	Code        string `gorm:"column:code" json:"code"`
 	Name        string `gorm:"column:name" json:"name"`
 	Market      string `gorm:"column:market" json:"market"`
@@ -40,7 +51,7 @@ func (v *Variety) TableName() string {
 }
 
 type UserVariety struct {
-	Model
+	common.Model
 	UserID    uint    `gorm:"column:user_id" json:"user_id"`
 	User      User    `gorm:"-" json:"user"`
 	VarietyID uint    `gorm:"column:variety_id" json:"variety_id"`

@@ -12,6 +12,8 @@ const (
 	EventDisconnected                     // 连接断开
 	EventCTPTradingAccountRtn             // CTP请求查询资金账户响应
 	EventCTPOrderRtn                      // CTP订单响应
+	EventAccountBalanceChanged
+	EventAccountCreated
 )
 
 func (t Type) String() string {

@@ -1,5 +1,12 @@
 package account
 
+import (
+	"quant-trading/internal/domain/common"
+	"quant-trading/internal/domain/user"
+
+	"github.com/google/uuid"
+)
+
 /*
 Account
 =======
@@ -9,78 +16,45 @@ Account
 这里只保留基础身份信息。
 */
 
+type AccountID string
+
+func NewAccountID() AccountID {
+	return AccountID(uuid.New().String())
+}
+
+func (a AccountID) String() string {
+	return string(a)
+}
+
+type Status string
+
+const (
+	StatusActive    Status = "active"
+	StatusInactive  Status = "inactive"
+	StatusSuspended Status = "suspended"
+)
+
 type Account struct {
-	AccountID string
-	//mu        sync.Mutex
-	//
-	//id        string
-	//name      string
-	//capital   *Capital
-	//portfolio *Portfolio
+	common.Model
+	ID           AccountID      `gorm:"column:account_id;type:varchar(40);uniqueIndex;not null;primaryKey"`
+	UserID       user.UserID    `gorm:"column:user_id;type:varchar(40);index;not null"`
+	BrokerName   string         `gorm:"column:broker_name;not null"`
+	AccountAlias string         `gorm:"column:account_alias;not null"`
+	Status       Status         `gorm:"column:status;not null;default:active"`
+	Config       map[string]any `gorm:"column:config;type:json"`
 }
 
-/*
-func NewAccount(id, name string, initial float64) *Account {
+func (a *Account) TableName() string {
+	return "t_account"
+}
+
+func NewAccount(userID user.UserID, brokerName, alias string) *Account {
 	return &Account{
-		id:        id,
-		name:      name,
-		capital:   newCapital(initial),
-		portfolio: newPortfolio(),
+		ID:           NewAccountID(),
+		UserID:       userID,
+		BrokerName:   brokerName,
+		AccountAlias: alias,
+		Status:       StatusActive,
+		Config:       make(map[string]any),
 	}
 }
-
-func (a *Account) ID() string {
-	return a.id
-}
-
-func (a *Account) Name() string {
-	return a.name
-}
-
-// =========================
-// 核心交易入口（唯一写入口）
-// =========================
-
-func (a *Account) ApplyFill(fill Fill) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	if err := a.portfolio.applyFill(fill); err != nil {
-		return err
-	}
-
-	if err := a.capital.applyFill(fill); err != nil {
-		// 若资金失败，回滚持仓
-		a.portfolio.rollbackFill(fill)
-		return err
-	}
-	return nil
-}
-
-// =========================
-// 只读接口
-// =========================
-
-func (a *Account) Snapshot(market map[string]float64) Snapshot {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	positions, totalMarketValue, totalUnrealized := a.portfolio.snapshot(market)
-
-	var totalRealized float64
-	for _, p := range positions {
-		totalRealized += p.RealizedPnL
-	}
-
-	equity := a.capital.available + totalMarketValue
-
-	return Snapshot{
-		AccountID:     a.AccountID,
-		Equity:        equity,
-		RealizedPnL:   totalRealized,
-		UnrealizedPnL: totalUnrealized,
-		Positions:     positions,
-	}
-}
-
-*/

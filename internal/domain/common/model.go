@@ -1,14 +1,9 @@
-package user_model
+package common
 
 import (
 	"database/sql"
-	"quant-trading/internal/infrastructure/logger"
 	"time"
-
-	"go.uber.org/zap"
 )
-
-var log = logger.Logger.With(zap.String("module", "models"))
 
 type Model struct {
 	ID        uint         `gorm:"primary_key" json:"id"`

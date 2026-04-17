@@ -1,4 +1,4 @@
-package user_model
+package user
 
 type UserRepository interface {
 	GetByID(id uint) (*User, error)
