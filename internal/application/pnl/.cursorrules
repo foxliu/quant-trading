@@ -1,0 +1,14 @@
+# internal/application/pnl/.cursorrules
+
+## 本目录核心职责
+- 提供已实现/未实现盈亏计算与结果聚合能力
+- 作为 Position 与 Market 的观察型计算组件
+
+## 必须遵守
+- PnL 计算保持纯函数优先，避免副作用
+- Realized 与 Unrealized 必须严格区分
+- 计算结果来源可追溯（position + market + fill）
+
+## 禁止
+- 禁止 PnL 模块直接触发下单或风控动作
+- 禁止将 PnL 作为状态源覆盖 Position 事实

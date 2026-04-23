@@ -27,7 +27,7 @@ Dispatcher 负责【事件广播 + Runtime 并发调度】。
 */
 type Dispatcher struct {
 	runtimes []*runtime.Runtime
-	risk     risk.Engine
+	risk     *risk.Engine
 	bus      event.Bus // 注入 Event Bus
 
 	ctx    context.Context
@@ -45,7 +45,7 @@ Dispatcher 是一个“调度器”，而不是“运行时工厂”。
 - Runtime 必须在外部创建（Account-aware）
 - Dispatcher 只接收 Runtime 集合
 */
-func NewDispatcher(runtimes []*runtime.Runtime, riskEngine risk.Engine, bus event.Bus) *Dispatcher {
+func NewDispatcher(runtimes []*runtime.Runtime, riskEngine *risk.Engine, bus event.Bus) *Dispatcher {
 	recordingBus := event.NewRecordingBus(bus, event.NewMemoryRecorder())
 
 	return &Dispatcher{

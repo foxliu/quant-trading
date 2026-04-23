@@ -32,6 +32,14 @@ func (t Type) String() string {
 		return "order.rejected"
 	case EventDisconnected:
 		return "disconnected"
+	case EventCTPTradingAccountRtn:
+		return "ctp.trading_account_rtn"
+	case EventCTPOrderRtn:
+		return "ctp.order_rtn"
+	case EventAccountBalanceChanged:
+		return "account.balance.changed"
+	case EventAccountCreated:
+		return "account.created"
 	default:
 		return "unknown"
 	}

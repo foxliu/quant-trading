@@ -1,6 +1,7 @@
 package risk
 
 import (
+	"context"
 	"quant-trading/internal/application/risk/rules"
 	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/risk"
@@ -18,6 +19,16 @@ type Engine struct {
 	logger *zap.Logger
 }
 
+// Start / Stop 供 Dispatcher 等生命周期挂载；当前风控引擎无后台任务，仅占位。
+func (e *Engine) Start(ctx context.Context) error {
+	_ = ctx
+	return nil
+}
+
+func (e *Engine) Stop() error {
+	return nil
+}
+
 func NewEngine() *Engine {
 	e := &Engine{
 		rules:  make([]risk.Rule, 0),
@@ -25,10 +36,10 @@ func NewEngine() *Engine {
 	}
 
 	// 添加默认规则
-	e.RegisterRule(rules.NewMaxPositionRule(20))
-	e.RegisterRule(rules.NewSingleOrderLimitRule(5))
-	e.RegisterRule(rules.NewMaxDrawDownRule(0.1))
-	e.RegisterRule(rules.NewDailyLossLimitRule(80000))
+	e.RegisterRule(rules.NewMaxPositionRule(20, nil))
+	e.RegisterRule(rules.NewSingleOrderLimitRule(5, nil))
+	e.RegisterRule(rules.NewMaxDrawDownRule(0.1, nil))
+	e.RegisterRule(rules.NewDailyLossLimitRule(80000, nil))
 
 	e.logger.Info("风控引擎初始化完成", zap.Int("rule_count", len(e.rules)))
 	return e

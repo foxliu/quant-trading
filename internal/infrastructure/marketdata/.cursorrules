@@ -1,0 +1,14 @@
+# internal/infrastructure/marketdata/.cursorrules
+
+## 本目录核心职责
+- 实现外部行情数据适配器（如 CSV）
+- 将外部数据转换为 domain/application 可消费格式
+
+## 必须遵守
+- 适配器实现与上层 DataSource 接口对齐
+- 解析失败必须提供可定位的错误信息
+- 时间与价格字段转换保持确定性
+
+## 禁止
+- 禁止在适配器内实现策略或风控逻辑
+- 禁止写入账户/仓位状态

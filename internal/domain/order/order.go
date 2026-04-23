@@ -77,5 +77,5 @@ func (o *Order) SetCTPFrontID(frontID string)         { o.ctpFrontID = frontID }
 func (o *Order) SetCTPSessionID(sessionID string)     { o.ctpSessionID = sessionID }
 
 func (o *Order) MarkFilled() {
-	o.status = StatusFilled
+	o.status = OrderStatusAllTraded
 }

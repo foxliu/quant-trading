@@ -1,0 +1,14 @@
+# internal/application/capital/.cursorrules
+
+## 本目录核心职责
+- 提供 capital.Engine 的应用层实现（当前为内存实现）
+- 封装资金冻结、释放、结算等状态变更
+
+## 必须遵守
+- 资金状态变更必须保持线程安全
+- 对外只暴露 domain/capital.Engine 约定的方法
+- 保持与 account/context 的读写语义一致
+
+## 禁止
+- 禁止直接依赖数据库
+- 禁止在此目录实现交易决策与风控规则

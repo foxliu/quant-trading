@@ -1,0 +1,13 @@
+# internal/domain/common/.cursorrules
+
+## 本目录核心职责
+- 放置跨领域共享的最小值对象与通用枚举
+- 仅承载稳定、低变化的基础定义
+
+## 必须遵守
+- 保持无副作用、无外部依赖
+- 共享类型需要跨子域复用价值
+
+## 禁止
+- 禁止引入业务流程逻辑
+- 禁止依赖 application 与 infrastructure 包

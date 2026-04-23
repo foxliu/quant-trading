@@ -1,0 +1,14 @@
+# internal/application/position/.cursorrules
+
+## 本目录核心职责
+- 维护仓位事实与仓位快照
+- 由 Execution 事件驱动仓位状态演进
+
+## 必须遵守
+- Position 仅由成交事实更新，不由 Signal 直接更新
+- 多 symbol 管理通过 Manager 统一协调
+- Snapshot 必须与当前持仓状态一致
+
+## 禁止
+- 禁止绕过事件直接改写仓位事实
+- 禁止耦合具体 broker 或数据库实现

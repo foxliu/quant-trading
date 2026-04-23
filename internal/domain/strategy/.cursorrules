@@ -1,0 +1,13 @@
+# internal/domain/strategy/.cursorrules
+
+## 本目录核心职责
+- 定义 Strategy 接口、Signal/Action/Intent 领域对象
+- 约束策略在领域层的最小交互协议
+
+## 必须遵守
+- Strategy 接口仅表达业务意图，不依赖执行细节
+- Signal 字段需能完整描述下游规划所需信息
+
+## 禁止
+- 禁止在该目录编写具体策略实现
+- 禁止依赖 application/runtime 或 infrastructure 包

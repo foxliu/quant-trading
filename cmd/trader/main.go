@@ -2,23 +2,31 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	aAccount "quant-trading/internal/application/account"
 	"quant-trading/internal/application/capital"
+	execpaper "quant-trading/internal/application/execution/paper"
 	"quant-trading/internal/application/event"
-	"quant-trading/internal/application/paper"
 	"quant-trading/internal/application/portfolio"
-	"quant-trading/internal/application/risk" // 新增
+	"quant-trading/internal/application/risk"
 	"quant-trading/internal/application/runtime"
-	"quant-trading/internal/domain/account"
+	dStrategy "quant-trading/internal/domain/strategy"
 	"quant-trading/internal/infrastructure/broker"
 	"quant-trading/internal/infrastructure/config"
 	"quant-trading/internal/infrastructure/db"
 	"quant-trading/internal/infrastructure/logger"
+	"quant-trading/internal/infrastructure/persistence"
 	"quant-trading/internal/infrastructure/strategy/examples"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -27,48 +35,105 @@ func main() {
 
 	cfg, err := config.LoadTraderConfig(*configPath)
 	if err != nil {
-		return
+		fmt.Fprintf(os.Stderr, "配置加载失败: %v\n", err)
+		os.Exit(1)
+	}
+	if err := logger.InitLogger(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "日志初始化失败: %v\n", err)
+		os.Exit(1)
 	}
 	defer logger.Sync()
 
-	log := logger.Logger.With(zap.String("module", "cmd.trader"))
+	log := zap.L().With(zap.String("module", "cmd.trader"))
 	log.Info("=== 量化交易系统 - CTP 实盘交易模式（集成 RiskEngine） ===", zap.String("config", *configPath))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// 1. 加载配置
-	fmt.Println("1. 加载配置...")
-	cfg, err = config.LoadTraderConfig(*configPath)
-	if err != nil {
-		log.Fatal("配置加载失败", zap.Error(err))
+	dsn := cfg.DB.DSN
+	if dsn == "" {
+		dsn = "trader.db"
 	}
+	sqliteDB := db.InitSQLite(dsn)
 
-	db.InitSQLite(cfg.DB.DSN)
-
-	// 2. 创建事件总线
+	accountRepo := persistence.NewRepository(sqliteDB)
 	bus := event.NewMemoryBus()
 
-	// 2. 创建账户组件
-	fmt.Println("2. 初始化账户组件...")
-	domainAcc := &account.Account{AccountID: cfg.Account.Name}
-	capEngine := capital.NewMemoryEngine(cfg.Account.InitialCash)
+	accountSvc := aAccount.NewService(accountRepo, bus)
+	accountManager := aAccount.NewManager(accountSvc)
+
+	persister := aAccount.NewPersister(accountRepo, bus)
+	persister.Start()
+
+	profile, err := persistence.GetActiveTraderRuntimeProfile(sqliteDB)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Fatal("加载运行时配置失败", zap.Error(err))
+		}
+		log.Warn("未找到数据库运行时配置，尝试从配置文件迁移一次")
+		if err := bootstrapRuntimeProfileFromYAML(sqliteDB, cfg); err != nil {
+			log.Fatal("运行时配置缺失，且迁移失败；请先在数据库写入 t_trader_runtime_profile", zap.Error(err))
+		}
+		profile, err = persistence.GetActiveTraderRuntimeProfile(sqliteDB)
+		if err != nil {
+			log.Fatal("迁移后加载运行时配置失败", zap.Error(err))
+		}
+	}
+
+	initialCash := profile.InitialCash
+	if initialCash <= 0 {
+		initialCash = 100_000
+	}
+
+	capEngine := capital.NewMemoryEngine(initialCash)
 	portEngine := portfolio.NewMemoryEngine()
 
-	accountCtx := aAccount.NewContext(domainAcc, capEngine, portEngine)
+	stableKey := profile.AccountID
+	if stableKey == "" {
+		log.Fatal("数据库运行时配置 account_id 不能为空")
+	}
+
+	acc, err := accountSvc.LoadOrCreateAccount(aAccount.LoadAccountCommand{
+		UserID:     "user-001",
+		BrokerName: profile.BrokerName,
+		Alias:      stableKey,
+		Config: map[string]any{
+			"initial_capital": initialCash,
+		},
+	})
+	if err != nil {
+		log.Fatal("加载或创建账户失败", zap.Error(err))
+	}
+
+	accountCtx, err := accountManager.GetContext(acc.ID, capEngine, portEngine)
+	if err != nil {
+		log.Fatal("获取账户上下文失败", zap.Error(err))
+	}
+
+	refresh := runtime.NewRefreshScheduler(accountCtx, bus)
+	refresh.Start()
+
 	log.Info("账户初始化完成",
+		zap.String("account_id", acc.ID.String()),
 		zap.Float64("available", accountCtx.Available()),
 		zap.Float64("equity", accountCtx.Equity()))
 
-	// 3. 创建 CTP Broker
-	fmt.Println("3. 创建 CTP Broker...")
+	strategies, err := profile.Strategies()
+	if err != nil {
+		log.Fatal("解析数据库策略配置失败", zap.Error(err))
+	}
+	if len(strategies) == 0 {
+		log.Fatal("数据库策略配置为空，请在 t_trader_runtime_profile.strategies_json 中配置")
+	}
+
+	fmt.Println("创建 CTP Broker...")
 	ctpBroker, err := broker.NewCTPAdapter(
-		cfg.CTP.FrontAddr,
-		cfg.CTP.BrokerID,
-		cfg.CTP.UserID,
-		cfg.CTP.InvestorID,
-		cfg.CTP.Password,
-		cfg.CTP.AccountID,
+		profile.CTPFrontAddr,
+		profile.CTPBrokerID,
+		profile.CTPInvestorID,
+		profile.CTPUserID,
+		profile.CTPPassword,
+		profile.AccountID,
 		accountCtx,
 		portEngine,
 	)
@@ -77,34 +142,28 @@ func main() {
 	}
 	log.Info("CTP Broker 已登录成功")
 
-	// 4. 创建执行引擎
-	fmt.Println("4. 创建执行引擎...")
-	executionEngine := paper.NewEngine(ctpBroker, accountCtx)
+	executionEngine := execpaper.NewEngine(ctpBroker, accountCtx)
 	log.Info("执行引擎已就绪")
 
-	// 5. 创建风控引擎（新增）
-	fmt.Println("5. 创建 RiskEngine...")
 	riskEngine := risk.NewEngine()
 	log.Info("风控引擎已初始化")
 
-	// 7. 创建多策略调度器（注入 RiskEngine）
-	fmt.Println("6. 创建 Scheduler...")
 	scheduler := runtime.NewScheduler(accountCtx, riskEngine, bus, executionEngine)
 
-	// 8. 注册策略
-	fmt.Println("7. 注册策略...")
-	maStrategy := examples.NewMACrossStrategy("MA_Cross_IH2503", 5, 20)
-	if err := scheduler.RegisterStrategy(maStrategy); err != nil {
-		log.Fatal("策略注册失败", zap.Error(err))
+	for _, spec := range strategies {
+		stg, err := buildStrategy(spec)
+		if err != nil {
+			log.Fatal("构建策略失败", zap.String("strategy", spec.Name), zap.Error(err))
+		}
+		if err := scheduler.RegisterStrategy(stg); err != nil {
+			log.Fatal("策略注册失败", zap.String("strategy", spec.Name), zap.Error(err))
+		}
 	}
 
-	// 9. 启动 Scheduler
-	fmt.Println("8. 启动多策略调度器...")
 	if err := scheduler.Start(ctx); err != nil {
 		log.Fatal("Scheduler 启动失败", zap.Error(err))
 	}
 
-	// 10. 启动风控协调器（可选，监听事件）
 	coordinator := risk.NewCoordinator(riskEngine, bus)
 	if err := coordinator.Start(ctx); err != nil {
 		log.Warn("风控协调器启动失败", zap.Error(err))
@@ -112,11 +171,145 @@ func main() {
 
 	log.Info("✅ CTP 实盘系统已启动！RiskEngine 已集成",
 		zap.String("config_file", *configPath),
-		zap.String("account_id", cfg.CTP.AccountID),
-		zap.Float64("initial_cash", cfg.Account.InitialCash))
+		zap.String("ctp_account_id", profile.AccountID),
+		zap.Float64("initial_cash", initialCash))
 
-	// 保持运行
 	<-ctx.Done()
 	scheduler.Stop()
 	log.Info("交易系统已停止")
+}
+
+func bootstrapRuntimeProfileFromYAML(sqliteDB *gorm.DB, cfg *config.TraderConfig) error {
+	if cfg.CTP.AccountID == "" || cfg.CTP.FrontAddr == "" {
+		return fmt.Errorf("缺少用于迁移的 ctp 关键信息")
+	}
+	strategies := make([]persistence.StrategySpec, 0, len(cfg.Strategies))
+	for _, s := range cfg.Strategies {
+		strategies = append(strategies, persistence.StrategySpec{
+			Name:   s.Name,
+			Type:   s.Type,
+			Params: s.Params,
+		})
+	}
+	if len(strategies) == 0 {
+		strategies = append(strategies, persistence.StrategySpec{
+			Name: "MA_Cross_IH2503",
+			Type: "ma_cross",
+			Params: map[string]any{
+				"short_period": 5,
+				"long_period":  20,
+			},
+		})
+	}
+	payload, err := json.Marshal(strategies)
+	if err != nil {
+		return err
+	}
+	initialCash := cfg.Account.InitialCash
+	if initialCash <= 0 {
+		initialCash = 100_000
+	}
+	return persistence.UpsertTraderRuntimeProfile(sqliteDB, &persistence.TraderRuntimeProfile{
+		Key:            "default",
+		Active:         true,
+		BrokerName:     "CTP",
+		AccountID:      cfg.CTP.AccountID,
+		InitialCash:    initialCash,
+		CTPFrontAddr:   cfg.CTP.FrontAddr,
+		CTPBrokerID:    cfg.CTP.BrokerID,
+		CTPUserID:      cfg.CTP.UserID,
+		CTPInvestorID:  cfg.CTP.InvestorID,
+		CTPPassword:    cfg.CTP.Password,
+		StrategiesJSON: string(payload),
+	})
+}
+
+func buildStrategy(spec persistence.StrategySpec) (dStrategy.Strategy, error) {
+	name := strings.TrimSpace(spec.Name)
+	if name == "" {
+		return nil, fmt.Errorf("strategy name 不能为空")
+	}
+
+	switch strings.ToLower(strings.TrimSpace(spec.Type)) {
+	case "ma_cross", "macross":
+		shortPeriod := paramInt(spec.Params, "short_period", 5)
+		longPeriod := paramInt(spec.Params, "long_period", 20)
+		return examples.NewMACrossStrategy(name, shortPeriod, longPeriod), nil
+	case "breakout":
+		period := paramInt(spec.Params, "period", 20)
+		quantity := paramFloat(spec.Params, "quantity", 100)
+		return examples.NewBreakoutStrategy(name, period, quantity), nil
+	default:
+		return nil, fmt.Errorf("不支持的策略类型: %s", spec.Type)
+	}
+}
+
+func paramInt(params map[string]interface{}, key string, def int) int {
+	if params == nil {
+		return def
+	}
+	v, ok := params[key]
+	if !ok {
+		return def
+	}
+	switch n := v.(type) {
+	case int:
+		return n
+	case int8:
+		return int(n)
+	case int16:
+		return int(n)
+	case int32:
+		return int(n)
+	case int64:
+		return int(n)
+	case float32:
+		return int(n)
+	case float64:
+		return int(n)
+	case json.Number:
+		if i, err := n.Int64(); err == nil {
+			return int(i)
+		}
+	case string:
+		if i, err := strconv.Atoi(n); err == nil {
+			return i
+		}
+	}
+	return def
+}
+
+func paramFloat(params map[string]interface{}, key string, def float64) float64 {
+	if params == nil {
+		return def
+	}
+	v, ok := params[key]
+	if !ok {
+		return def
+	}
+	switch n := v.(type) {
+	case float64:
+		return n
+	case float32:
+		return float64(n)
+	case int:
+		return float64(n)
+	case int8:
+		return float64(n)
+	case int16:
+		return float64(n)
+	case int32:
+		return float64(n)
+	case int64:
+		return float64(n)
+	case json.Number:
+		if f, err := n.Float64(); err == nil {
+			return f
+		}
+	case string:
+		if f, err := strconv.ParseFloat(n, 64); err == nil {
+			return f
+		}
+	}
+	return def
 }

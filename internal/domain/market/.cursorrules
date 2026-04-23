@@ -1,0 +1,13 @@
+# internal/domain/market/.cursorrules
+
+## 本目录核心职责
+- 定义市场事件与行情值对象（Tick/Bar/Snapshot）
+- 统一市场数据在领域层的表达方式
+
+## 必须遵守
+- 事件与行情结构保持不可变语义优先
+- 时间与价格字段命名保持一致性
+
+## 禁止
+- 禁止包含外部行情 SDK 或网络连接代码
+- 禁止依赖 application 和 infrastructure 包

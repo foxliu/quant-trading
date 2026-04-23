@@ -1,0 +1,13 @@
+# internal/domain/trade/.cursorrules
+
+## 本目录核心职责
+- 定义成交模型、成交方向与持仓变更基础语义
+- 作为执行事实与仓位计算的核心输入
+
+## 必须遵守
+- 成交字段必须满足审计与回放最小要求
+- 方向、数量、价格语义与 order/execution 保持一致
+
+## 禁止
+- 禁止在该目录编写成交接入通道逻辑
+- 禁止依赖 application/infrastructure 实现

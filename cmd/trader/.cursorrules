@@ -1,0 +1,11 @@
+# cmd/trader/.cursorrules
+
+## 本目录核心职责
+- 仅负责程序入口和依赖组装
+- 禁止包含任何业务逻辑
+
+## 必须遵守
+- 必须先创建 repo → service → manager → persister
+- 必须调用 LoadOrCreateAccount（生产环境）
+- 必须启动 Persister 和 RefreshScheduler
+- 必须通过 manager.GetContext 获取 Context

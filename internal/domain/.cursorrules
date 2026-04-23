@@ -1,0 +1,14 @@
+# internal/domain/.cursorrules
+
+## 本目录核心职责
+- 定义交易系统领域模型、值对象、领域事件与仓库接口
+- 维护稳定一致的业务语言与边界
+
+## 必须遵守
+- domain 仅表达业务规则，不依赖基础设施实现
+- 领域对象应尽量保持不可变和可测试
+- 仓库接口在 domain 声明，在 infrastructure 实现
+
+## 禁止
+- 禁止 import gorm、sqlite、broker SDK 等技术实现包
+- 禁止放置应用编排与运行时调度代码

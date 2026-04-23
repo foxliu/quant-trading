@@ -1,0 +1,14 @@
+# internal/infrastructure/logger/.cursorrules
+
+## 本目录核心职责
+- 统一日志初始化、日志级别与输出策略
+- 暴露全局可复用 logger 入口
+
+## 必须遵守
+- InitLogger 必须在程序入口早期调用
+- 日志字段统一包含 module 维度
+- Sync 在进程退出前调用
+
+## 禁止
+- 禁止在日志层耦合业务流程控制
+- 禁止依赖 domain/application 业务对象

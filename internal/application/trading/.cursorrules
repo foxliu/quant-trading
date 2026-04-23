@@ -1,0 +1,14 @@
+# internal/application/trading/.cursorrules
+
+## 本目录核心职责
+- 串联 Signal → Order → Risk → Execution 的交易管线
+- 管理交易阶段之间的通道与生命周期
+
+## 必须遵守
+- 各阶段职责边界清晰，输入输出类型固定
+- 管线启动/停止必须受 context.Context 管控
+- 任一阶段异常需可追踪且不应静默丢失
+
+## 禁止
+- 禁止在管线层定义领域模型
+- 禁止越层直接调用 infrastructure 细节

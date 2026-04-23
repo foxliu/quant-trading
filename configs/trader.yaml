@@ -1,6 +1,9 @@
 # 量化交易系统 - 实盘配置（trader.yaml）
 # 环境变量可覆盖对应字段（例如 CTP_FRONT_ADDR）
 
+db:
+  dsn: "trader.db"
+
 ctp:
   front_addr: "tcp://180.168.146.187:10101"   # 测试前置（生产换券商地址）
   broker_id: "9999"

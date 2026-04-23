@@ -1,0 +1,14 @@
+# internal/application/event/.cursorrules
+
+## 本目录核心职责
+- 定义事件总线抽象、Envelope 与内存总线实现
+- 负责事件发布订阅机制与录制/回放辅助能力
+
+## 必须遵守
+- 所有事件载体统一使用 event.Envelope
+- Type 必须在 type.go 统一定义并保持可读字符串映射
+- 发布/订阅行为需考虑并发安全与顺序语义
+
+## 禁止
+- 禁止在事件处理层写业务决策
+- 禁止跨层直接操作 repository

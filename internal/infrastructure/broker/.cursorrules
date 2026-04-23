@@ -1,0 +1,14 @@
+# internal/infrastructure/broker/.cursorrules
+
+## 本目录核心职责
+- 实现 Broker / Exchange 适配器（CTP、Paper 等）
+- 接收执行请求并产出标准化执行事件
+
+## 必须遵守
+- 仅承载“执行通道”职责，不做策略与风控裁决
+- 外部回报必须映射为统一 ExecutionEvent 语义
+- 与 application 层通过接口交互，避免反向依赖
+
+## 禁止
+- 禁止在 broker 层直接修改策略状态
+- 禁止在 broker 层直接执行业务决策逻辑

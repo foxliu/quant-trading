@@ -1,7 +1,6 @@
 package account
 
 import (
-	"quant-trading/internal/application/event"
 	"quant-trading/internal/domain/account"
 	"quant-trading/internal/domain/capital"
 	"quant-trading/internal/domain/portfolio"
@@ -26,7 +25,11 @@ func NewManager(service *Service) *Manager {
 	}
 }
 
-func (m *Manager) GetContext(id account.AccountID, cap capital.Engine, port portfolio.Engine) (*Context, error) {
+func (m *Manager) GetContext(
+	id account.AccountID,
+	cap capital.Engine,
+	port portfolio.Engine,
+) (*Context, error) {
 	m.mu.RLock()
 	if ctx, ok := m.contexts[id]; ok {
 		m.mu.RUnlock()
@@ -44,13 +47,19 @@ func (m *Manager) GetContext(id account.AccountID, cap capital.Engine, port port
 	return ctx, nil
 }
 
-func (m *Manager) StartPersister() {
-	m.service.bus.Subscribe(event.EventAccountBalanceChanged, func(evt *event.Envelope) {
-		snap, ok := evt.Payload.(account.Snapshot)
-		if !ok {
-			m.log.Error("无效的evt.Payload")
-			return
-		}
-		m.service.repo.SaveSnapshot(&snap)
-	})
+func (m *Manager) ListContexts() map[account.AccountID]*Context {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	copyMap := make(map[account.AccountID]*Context, len(m.contexts))
+	for k, v := range m.contexts {
+		copyMap[k] = v
+	}
+	return copyMap
+}
+
+func (m *Manager) RemoveContext(id account.AccountID) {
+	m.mu.Lock()
+	delete(m.contexts, id)
+	m.mu.Unlock()
 }

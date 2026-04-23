@@ -132,13 +132,26 @@ func (p *SimplePortfolio) GetPositions() ([]Position, error) {
 	return positions, nil
 }
 
-func (p *SimplePortfolio) GetPosition(symbol string) (Position, error) {
-	pos := p.positions[symbol]
+func (p *SimplePortfolio) GetPosition(symbol string) (Position, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	pos, ok := p.positions[symbol]
+	if !ok {
+		return Position{}, false
+	}
 	return Position{
 		Instrument: instrument.Instrument{
 			Symbol: symbol,
 		},
 		Quantity:  pos.quantity,
 		LastPrice: pos.lastPrice,
-	}, nil
+	}, true
+}
+
+func (p *SimplePortfolio) GetDailyRealizedPnL() float64 {
+	return 0
+}
+
+func (p *SimplePortfolio) GetMaxDrawdown() float64 {
+	return 0
 }

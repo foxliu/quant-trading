@@ -1,0 +1,14 @@
+# internal/infrastructure/strategy/.cursorrules
+
+## 本目录核心职责
+- 放置具体策略实现与策略样例
+- 将 domain/strategy 接口落地为可运行策略
+
+## 必须遵守
+- 具体策略必须实现 domain/strategy.Strategy
+- 策略参数应可配置，不得硬编码关键交易参数
+- 策略副作用需通过标准事件/信号输出
+
+## 禁止
+- 禁止直接调用 broker 下单
+- 禁止在策略实现中写持久化代码

@@ -27,7 +27,7 @@ func (c *Context) OnExecutionEvent(evt *execution.Event) error {
 }
 
 func (c *Context) applyFill(evt *execution.Event) error {
-	if evt.FilledQty <= 0 {
+	if evt.Quantity <= 0 {
 		return errors.New("无效的增持仓数")
 	}
 
@@ -37,7 +37,7 @@ func (c *Context) applyFill(evt *execution.Event) error {
 	}
 
 	// Buy = +qty, Sell = -qty
-	delta := evt.FilledQty
+	delta := evt.Quantity
 	if evt.Side == order.Sell {
 		delta = -delta
 	}

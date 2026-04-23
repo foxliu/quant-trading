@@ -1,0 +1,14 @@
+# internal/application/backtest/.cursorrules
+
+## 本目录核心职责
+- 负责回测时钟、数据源驱动、策略运行与绩效汇总
+- 组织回测执行流程，不承载领域实体定义
+
+## 必须遵守
+- 通过统一 Engine 协调 DataSource、Strategy、ExecutionAdapter
+- 回测事件顺序必须可重放、可追踪
+- 结果输出必须来自计算产物，不得硬编码
+
+## 禁止
+- 禁止直接依赖 gorm 或基础设施持久化实现
+- 禁止在回测流程中混入实盘适配器专有逻辑

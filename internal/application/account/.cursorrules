@@ -1,0 +1,18 @@
+# internal/application/account/.cursorrules
+
+## 本目录核心职责
+- 仅允许 Service、Manager、Context、Persister
+- Service 负责用例协调（CreateAccount / LoadOrCreateAccount / NewContext）
+- Manager 负责多账号缓存
+- Context 必须持有 bus 并在 ApplyFill 等变更后调用 persist()
+- Persister 负责监听 EventAccountBalanceChanged 并调用 repo.SaveSnapshot
+
+## 必须遵守
+- NewContext 必须使用 s.bus（Service 内部持有）
+- 所有 Publish 必须使用 event.Envelope + 正确的 Type 常量
+- capital.Engine 必须通过 application 层统一工厂或装配入口创建
+- 所有方法必须支持多账号（基于 AccountID）
+
+## 禁止
+- 禁止 Context 直接持有 Repository
+- 禁止在 Context 中直接 SaveSnapshot（必须通过事件）

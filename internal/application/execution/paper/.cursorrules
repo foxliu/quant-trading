@@ -1,0 +1,14 @@
+# internal/application/execution/paper/.cursorrules
+
+## 本目录核心职责
+- 提供 execution.Engine 的 paper/mock 实现
+- 模拟成交回报并对齐统一 ExecutionEvent 语义
+
+## 必须遵守
+- 必须实现 execution.Engine 接口约定
+- 事件格式与真实执行链路保持一致
+- 明确标记仿真实现限制，避免误用为生产实现
+
+## 禁止
+- 禁止引入真实交易通道专有依赖
+- 禁止在仿真实现中绕过 Listener 机制

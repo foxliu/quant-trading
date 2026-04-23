@@ -1,0 +1,10 @@
+# internal/infrastructure/db/.cursorrules
+
+## 本目录核心职责
+- 仅负责数据库连接初始化和 AutoMigrate
+- 必须使用 gorm.io/driver/sqlite
+- 暴露 InitSQLite 函数，返回 *gorm.DB
+
+## 必须遵守
+- AutoMigrate 必须包含 Account 和 Snapshot 表
+- 配置从 `db.dsn` 读取

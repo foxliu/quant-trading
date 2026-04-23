@@ -1,0 +1,13 @@
+# internal/domain/execution/.cursorrules
+
+## 本目录核心职责
+- 定义执行事件、事件类型与成交事实模型
+- 提供执行子域的语言与契约
+
+## 必须遵守
+- 事件类型枚举必须集中管理
+- 执行事实模型字段要覆盖审计所需核心信息
+
+## 禁止
+- 禁止包含执行通道实现代码
+- 禁止依赖 application 与 infrastructure 包

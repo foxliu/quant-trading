@@ -1,0 +1,14 @@
+# cmd/backtest/.cursorrules
+
+## 本目录核心职责
+- 仅负责回测程序入口与依赖组装
+- 禁止在入口层承载策略、风控、执行等业务规则
+
+## 必须遵守
+- 通过 application/backtest 引擎驱动完整流程
+- 配置与参数统一来自配置对象或 CLI 参数
+- 输出结果仅用于展示，不回写 domain 状态
+
+## 禁止
+- 禁止直接操作数据库和持久化细节
+- 禁止绕过 application 层直接调用 infrastructure 内部实现

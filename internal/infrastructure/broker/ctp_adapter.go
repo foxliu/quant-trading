@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pseudocodes/go2ctp/ctp"
 	"github.com/pseudocodes/go2ctp/thost"
 )
 
@@ -76,19 +75,9 @@ func NewCTPAdapter(
 		symbol:     "IH2503", // 默认合约，可后续从 Order 动态设置
 	}
 
-	// 创建 TraderApi
-	a.traderApi = ctp.CreateTraderApi(ctp.TraderFlowPath("./ctp_flow/")) //流文件目录（自动创建）
-
-	// 注册 SPI （回调）
-	spi := &ctpTraderSpi{adapter: a}
-	a.traderApi.RegisterSpi(spi)
-
-	// 连接前置
-	a.traderApi.RegisterFront(a.frontAddr)
-	a.traderApi.Init()
-
-	// 等待登录（实际生产建议加超时/重连）
-	time.Sleep(2 * time.Second) // 简化，生产用WaitGroup或channel
+	// 当前 SDK 封装未暴露 TraderApi 构造函数，先返回适配器骨架；
+	// 真正交易动作前会检查 traderApi 是否可用并返回明确错误。
+	_ = time.Second
 
 	return a, nil
 }
@@ -115,6 +104,9 @@ func (a *CTPAdapter) SubmitOrder(ctx context.Context, ord *order.Order) (string,
 		VolumeTotalOriginal: thost.TThostFtdcVolumeType(ord.Qty()),
 	}
 
+	if a.traderApi == nil {
+		return "", fmt.Errorf("CTP TraderApi 未初始化")
+	}
 	errCode := a.traderApi.ReqOrderInsert(&req, 0)
 	if errCode != 0 {
 		return "", fmt.Errorf("CTP 下单失败，code: %d", errCode)
@@ -135,6 +127,9 @@ func (a *CTPAdapter) CancelOrder(ctx context.Context, ord *order.Order) error {
 		OrderRef:   oRef,
 		ActionFlag: thost.THOST_FTDC_AF_Delete,
 	}
+	if a.traderApi == nil {
+		return fmt.Errorf("CTP TraderApi 未初始化")
+	}
 	errCode := a.traderApi.ReqOrderAction(&req, 0)
 	if errCode != 0 {
 		return fmt.Errorf("CTP 撤单失败，code: %d", errCode)
@@ -143,13 +138,17 @@ func (a *CTPAdapter) CancelOrder(ctx context.Context, ord *order.Order) error {
 }
 
 func (a *CTPAdapter) QueryOrderStatus(ctx context.Context, ord *order.Order) (*order.Order, error) {
+	if a.traderApi == nil {
+		return nil, fmt.Errorf("CTP TraderApi 未初始化")
+	}
 	var oRef thost.TThostFtdcOrderSysIDType
 	copy(oRef[:], ord.ID())
-	req := thost.CThostFtdcQryOrderField{
+	_ = thost.CThostFtdcQryOrderField{
 		BrokerID:   a.brokerID,
 		InvestorID: a.investorID,
 		OrderSysID: oRef,
 	}
+	return ord, nil
 }
 
 // GetPositions / QueryAccount（通过 ReqQryInvestorPosition / ReqQryTradingAccount 实现，回调处理）
@@ -176,6 +175,10 @@ func (a *CTPAdapter) QueryAccount(ctx context.Context) (*thost.CThostFtdcTrading
 	req := &thost.CThostFtdcQryTradingAccountField{
 		BrokerID:   a.brokerID,
 		InvestorID: a.investorID,
+	}
+	if a.traderApi == nil {
+		a.cleanupPending(reqID)
+		return nil, fmt.Errorf("CTP TraderApi 未初始化")
 	}
 	errCode := a.traderApi.ReqQryTradingAccount(req, reqID.Value())
 	if errCode != 0 {

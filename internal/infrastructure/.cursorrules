@@ -1,0 +1,14 @@
+# internal/infrastructure/.cursorrules
+
+## 本目录核心职责
+- 提供外部系统接入：broker、db、config、logger、marketdata、persistence
+- 实现 domain/application 需要的技术能力
+
+## 必须遵守
+- 以接口实现为核心，避免反向侵入上层业务
+- 外部依赖失败需输出可排查日志并返回错误
+- 各子模块边界清晰，避免跨模块强耦合
+
+## 禁止
+- 禁止在 infrastructure 层承载策略与风控业务判断
+- 禁止将具体实现类型向上层广泛泄漏

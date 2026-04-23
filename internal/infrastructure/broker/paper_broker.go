@@ -63,7 +63,7 @@ func (b *PaperBroker) CancelOrder(ctx context.Context, orderID string) error {
 	defer b.mu.Unlock()
 
 	ord, ok := b.orders[orderID]
-	if !ok || ord.Status() == order.StatusFilled || ord.Status() == order.StatusCanceled {
+	if !ok || ord.Status() == order.OrderStatusAllTraded || ord.Status() == order.OrderStatusCanceled {
 		return fmt.Errorf("订单不存在或不可撤单: %s", orderID)
 	}
 	ord.MarkFilled()
@@ -73,7 +73,7 @@ func (b *PaperBroker) CancelOrder(ctx context.Context, orderID string) error {
 		Symbol:    ord.Symbol(),
 		Type:      execution.EventOrderCanceled,
 		Side:      ord.Side(),
-		FilledQty: ord.Qty(),
+		Quantity:  ord.Qty(),
 		Price:     ord.Price(),
 		Timestamp: ord.CreateAt(),
 	}
@@ -124,7 +124,7 @@ func (b *PaperBroker) simulateFill(ord *order.Order) {
 		Type:      execution.EventOrderFilled,
 		OrderID:   ord.ID(),
 		Price:     fillPrice,
-		FilledQty: fillQty,
+		Quantity:  fillQty,
 		Timestamp: time.Now(),
 	}
 }

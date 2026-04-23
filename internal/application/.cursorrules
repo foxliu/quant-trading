@@ -1,0 +1,14 @@
+# internal/application/.cursorrules
+
+## 本目录核心职责
+- 组织领域对象的用例编排、上下文管理与运行时流程
+- 作为 domain 与 infrastructure 的中间协调层
+
+## 必须遵守
+- application 只依赖 domain 抽象，不直接依赖具体基础设施实现
+- 状态变更以 context/event 为中心，保持可追踪
+- 组件边界清晰：account/risk/execution/position/market 等职责分离
+
+## 禁止
+- 禁止在 application 层定义领域实体本体
+- 禁止在 application 层直接写底层 SQL/GORM 操作

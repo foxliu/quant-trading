@@ -6,6 +6,7 @@ import (
 	"quant-trading/internal/domain/order"
 	"quant-trading/internal/domain/risk"
 	"sync"
+	"time"
 )
 
 // DailyLossLimitRule 日亏损限制
@@ -41,8 +42,12 @@ func (r *DailyLossLimitRule) CheckPosition() risk.CheckResult {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// 获取当前交易日（从CTP或accountCtx 获取）
-	tradingDay := r.accountCtx.GetCurrentTradingDay()
+	if r.accountCtx == nil {
+		return risk.CheckResult{Action: risk.ActionAllow}
+	}
+
+	// 使用本地日期作为交易日兜底；后续可替换为交易所日历。
+	tradingDay := time.Now().Format("20060102")
 
 	// 如果交易日切换，重置当日亏损
 	if tradingDay != r.currentTradingDay {

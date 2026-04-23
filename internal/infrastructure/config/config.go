@@ -13,8 +13,18 @@ type TraderConfig struct {
 		DSN string `yaml:"dsn"`
 	} `yaml:"db"`
 
+	CTP struct {
+		FrontAddr  string `yaml:"front_addr"`
+		BrokerID   string `yaml:"broker_id"`
+		UserID     string `yaml:"user_id"`
+		InvestorID string `yaml:"investor_id"`
+		Password   string `yaml:"password"`
+		AccountID  string `yaml:"account_id"`
+	} `yaml:"ctp"`
+
 	Account struct {
-		Name string `yaml:"name"`
+		Name        string  `yaml:"name"`
+		InitialCash float64 `yaml:"initial_cash"`
 	} `yaml:"account"`
 
 	Strategies []struct {

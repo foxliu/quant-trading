@@ -1,0 +1,13 @@
+# internal/domain/user/.cursorrules
+
+## 本目录核心职责
+- 定义用户实体、用户偏好与用户仓库接口
+- 提供账户归属与权限关联的基础领域对象
+
+## 必须遵守
+- Repository 仅定义契约，不包含实现细节
+- 用户相关值对象保持领域语义完整
+
+## 禁止
+- 禁止在该目录写数据库查询实现
+- 禁止依赖 application 或 infrastructure 代码

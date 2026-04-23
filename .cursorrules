@@ -1,0 +1,24 @@
+# quant-trading 项目全局 .cursorrules
+
+## 宪章级架构约束（必须遵守）
+- 严格 DDD + Clean Architecture：`domain`（业务语言）→ `application`（编排与上下文）→ `infrastructure`（外部实现）
+- Strategy 永远运行在受控 Context 中，禁止直接访问 broker、DB、账户实体
+- 多策略是一等公民：每个 Strategy 必须有独立 Runtime，运行隔离
+- 回测与实盘必须共享同一 Strategy 接口；差异只允许在 Context 实现与适配器层
+- Account 是资源模型而非静态配置，必须支持多账户调度与隔离
+
+## 事件与状态约束
+- 事件发布统一使用 `event.Envelope`（Type/Source/Timestamp/Payload）
+- Execution 是事实层，不是决策层；订单状态变化应由 ExecutionEvent 驱动
+- 持久化统一通过 `domain` 中定义的 Repository 接口完成
+
+## 代码风格与工程约束
+- 错误处理保持显式返回，禁止吞错
+- 需要日志的结构体应注入 `*zap.Logger` 并带 `module` 字段
+- 新增能力优先“新增上下文/模块”，禁止向单一模块无限堆职责
+
+## 禁止事项
+- 禁止在 `domain` 层引入 gorm/数据库/券商 SDK
+- 禁止在 `application` 层直接操作 GORM/SQL
+- 禁止策略直接下单或直接改账户/仓位状态
+

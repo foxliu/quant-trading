@@ -1,0 +1,14 @@
+# internal/application/execution/.cursorrules
+
+## 本目录核心职责
+- 负责订单执行编排与执行事件回传
+- 仅处理“如何执行”，不处理“是否执行”
+
+## 必须遵守
+- Execution Engine 接口保持最小职责：Submit + Listener
+- 成交/拒单/撤单等事实必须通过执行事件回传
+- 与 Risk、Position、Account 通过事件/接口解耦
+
+## 禁止
+- 禁止在执行层实现策略逻辑与风控规则判断
+- 禁止直接依赖具体数据库实现

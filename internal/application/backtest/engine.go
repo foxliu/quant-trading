@@ -12,6 +12,7 @@ import (
 	"quant-trading/internal/domain/capital"
 	"quant-trading/internal/domain/portfolio"
 	"quant-trading/internal/domain/strategy"
+	"quant-trading/internal/domain/user"
 	"time"
 )
 
@@ -75,15 +76,14 @@ func NewEngine(
 
 	// ==== Account ====
 	capi := capital.NewCashEngine(config.InitialCash)
-	acc := &dAccount.Account{AccountID: "tests"}
+	acc := dAccount.NewAccount(user.UserID("backtest-user"), "paper", "backtest")
 	port := portfolio.NewSimplePortfolio()
-
-	// 创建账户上下文
-	accountCtx := account.NewContext(acc, capi, port)
 
 	bus := event.NewMemoryBus()
 	recorder := event.NewMemoryRecorder()
 	recordingBus := event.NewRecordingBus(bus, recorder)
+
+	accountCtx := account.NewContext(acc, recordingBus, capi, port)
 	// 创建策略运行时
 	runtime := runtime2.NewRuntime(stg, accountCtx, recordingBus, 1024)
 
@@ -98,7 +98,7 @@ func NewEngine(
 	orderExecutor := NewOrderExecutor(execAdapter)
 
 	// 订阅订单事件
-	recordingBus.Subscribe(event.EventOrderEvent, orderExecutor.Handle)
+	recordingBus.Subscribe(event.EventOrderSubmitted, orderExecutor.Handle)
 
 	// ==== Performance =====
 	equityRecorder := performance.NewEquityRecorder()

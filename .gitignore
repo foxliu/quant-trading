@@ -84,6 +84,9 @@ out/
 tmp/
 temp/
 
+# 本地 SQLite 运行时库（含敏感/环境数据，勿提交）
+trader.db
+
 # 如果使用 Docker 或其他工具生成的
 Dockerfile*
 docker-compose*

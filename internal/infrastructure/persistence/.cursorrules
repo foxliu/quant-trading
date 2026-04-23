@@ -1,0 +1,13 @@
+# internal/infrastructure/persistence/.cursorrules
+
+## 本目录核心职责
+- 承载 repository 持久化实现及其子模块组织
+- 统一与 GORM/SQLite 的交互规范
+
+## 必须遵守
+- 所有实现需对齐对应 domain.Repository 接口
+- 主键、索引、排序规则与领域约束保持一致
+
+## 禁止
+- 禁止在 persistence 层添加业务流程判断
+- 禁止直接被 domain 层依赖

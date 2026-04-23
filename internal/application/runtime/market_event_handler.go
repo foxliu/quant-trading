@@ -15,11 +15,8 @@ func (h *marketEventHandler) Handle(evt *event.Envelope) {
 		return
 	}
 
-	// 关键修正：正确断言为 market.Event（与 HandleEvent 签名完全一致）
+	// 只入队，由 Runtime 后台协程串行消费，避免并发直接执行策略。
 	if marketEvt, ok := evt.Payload.(market.Event); ok {
-		_, err := h.rt.HandleEvent(marketEvt)
-		if err != nil {
-			return
-		} // ← 直接调用，无需任何改动
+		h.rt.Enqueue(marketEvt)
 	}
 }

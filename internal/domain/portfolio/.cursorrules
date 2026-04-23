@@ -1,0 +1,13 @@
+# internal/domain/portfolio/.cursorrules
+
+## 本目录核心职责
+- 定义组合与持仓的领域模型与接口
+- 统一组合级仓位与风险暴露语义
+
+## 必须遵守
+- Position/Portfolio 值对象必须保持业务含义清晰
+- 引擎接口应最小化并可被多实现复用
+
+## 禁止
+- 禁止在该目录实现持久化或行情拉取
+- 禁止依赖 application 与 infrastructure 包

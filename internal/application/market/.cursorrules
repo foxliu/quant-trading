@@ -1,0 +1,14 @@
+# internal/application/market/.cursorrules
+
+## 本目录核心职责
+- 管理 Market Price Context 与 Snapshot
+- 提供多标的只读行情视图与事件更新入口
+
+## 必须遵守
+- Market Context 只暴露不可变查询对象
+- 更新路径统一通过事件/handler 进入
+- Snapshot 必须可序列化且可复现
+
+## 禁止
+- 禁止直接处理外部订阅连接与网络重连
+- 禁止在行情上下文中实现策略指标计算逻辑

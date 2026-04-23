@@ -1,0 +1,14 @@
+# internal/application/portfolio/.cursorrules
+
+## 本目录核心职责
+- 提供 portfolio.Engine 的应用层实现
+- 管理持仓集合、日度统计与组合级指标
+
+## 必须遵守
+- 对外接口与 domain/portfolio.Engine 保持一致
+- 更新操作需保证并发安全与状态一致性
+- 组合统计来源必须可追溯到持仓事实
+
+## 禁止
+- 禁止在组合层直接处理订单执行逻辑
+- 禁止直接持久化到数据库

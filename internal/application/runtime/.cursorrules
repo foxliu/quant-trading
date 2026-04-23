@@ -1,0 +1,11 @@
+# internal/application/runtime/.cursorrules
+
+## 本目录核心职责
+- 负责策略 Runtime 生命周期管理与调度编排
+- 负责市场事件分发、信号产出与运行时隔离
+- 可包含刷新调度等辅助运行组件（如 RefreshScheduler）
+
+## 必须遵守
+- 使用 context.Context 控制停止
+- Runtime 间必须隔离，禁止共享可变全局状态
+- 对外通过 event.Bus 发布标准事件，不绕过事件总线写下游状态

@@ -51,6 +51,7 @@ func InitLogger(cfg *config.TraderConfig) error {
 	}
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(0))
 	zap.ReplaceGlobals(logger)
+	Logger = zap.L()
 	return nil
 }
 

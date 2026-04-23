@@ -58,7 +58,7 @@ func NewContext(acc *account.Account,
 	}
 }
 
-func (c *Context) AccountIDString() string {
+func (c *Context) AccountID() string {
 	return c.acc.ID.String()
 }
 

@@ -1,0 +1,15 @@
+# internal/domain/account/.cursorrules
+
+## 本目录核心职责
+- 仅允许定义纯领域实体、值对象、Repository 接口、领域事件
+- Account 是聚合根，必须包含 UserID、BrokerName、Config 等字段
+
+## 必须遵守
+- AccountID 是值对象（UUID）
+- Snapshot 是值对象（包含 AccountID、Balance、Capital、Portfolio、RealizedPnL、Timestamp）
+- Repository 接口必须放在 repository.go 中
+- 领域事件必须定义在 event.go 中（AccountCreatedEvent / AccountBalanceChangedEvent）
+
+## 禁止
+- 禁止 import "gorm.io/gorm"（只能在 infrastructure 层使用）
+- 禁止包含业务逻辑（业务逻辑必须在 application 层）

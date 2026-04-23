@@ -2,11 +2,6 @@ package user
 
 import (
 	"quant-trading/internal/domain/common"
-	"quant-trading/internal/infrastructure/logger"
-
-	"go.uber.org/zap"
-	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 type UserID string
@@ -15,8 +10,6 @@ func (u UserID) String() string {
 	return string(u)
 }
 
-var log = logger.Logger.With(zap.String("module", "user_model"))
-
 type User struct {
 	common.Model
 	ID           UserID         `gorm:"column:user_id;type:varchar(40);uniqueIndex;not null;primaryKey"`
@@ -24,7 +17,7 @@ type User struct {
 	InvestorID   string         `gorm:"column:investor_id;not null;comment:投资者代码，交易账号"`
 	AppID        string         `gorm:"column:app_id;not null;comment:穿透式监管客户端应用标识"`
 	AuthCode     string         `gorm:"column:auth_code;not null;comment:穿透式监管授权码/认证码"`
-	ServerJson   datatypes.JSON `gorm:"column:server_json;type:JSONB;not null"`
+	ServerJson   []byte         `gorm:"column:server_json;type:JSONB;not null"`
 	PasswordHash string         `gorm:"column:password_hash;not null"`
 	IsActive     bool           `gorm:"column:is_active;not null"`
 }
@@ -60,22 +53,4 @@ type UserVariety struct {
 
 func (v *UserVariety) TableName() string {
 	return "t_user_variety"
-}
-
-func (v *UserVariety) AfterFind(tx *gorm.DB) error {
-	if v.UserID != 0 {
-		if err := tx.Model(&User{}).Where("id = ?", v.UserID).First(&v.User).Error; err != nil {
-			log.Error("通过user_id查询用户信息错误", zap.Uint("user_id", v.UserID), zap.Error(err))
-			v.User = User{}
-		}
-		v.User.PasswordHash = ""
-	}
-
-	if v.VarietyID != 0 {
-		if err := tx.Model(&Variety{}).Where("id = ?", v.VarietyID).First(&v.Variety).Error; err != nil {
-			log.Error("通过variety_id查询品种信息错误", zap.Uint("variety_id", v.VarietyID), zap.Error(err))
-			v.Variety = Variety{}
-		}
-	}
-	return nil
 }

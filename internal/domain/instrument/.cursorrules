@@ -1,0 +1,13 @@
+# internal/domain/instrument/.cursorrules
+
+## 本目录核心职责
+- 定义可交易标的类型、属性与基础约束
+- 作为 strategy/execution 的统一标的语义来源
+
+## 必须遵守
+- 字段定义保持稳定并具有明确业务含义
+- 标的分类枚举应可扩展且向后兼容
+
+## 禁止
+- 禁止在该目录内实现行情订阅与外部适配逻辑
+- 禁止依赖 infrastructure 包
